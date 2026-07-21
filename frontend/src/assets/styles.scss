@@ -1,0 +1,57 @@
+/* 1. Módulos de Sass */
+@use './layout/layout.scss';
+@use './demo/demo.scss';
+
+/* 2. Librerías */
+@use 'primeicons/primeicons.css';
+@use "@fortawesome/fontawesome-free/css/all.css";
+
+/* 3. Tailwind */
+@import './tailwind.css';
+
+@layer components {
+  .custom-form-card {
+    @apply p-6 rounded-lg shadow-md mt-2;
+    background-color: var(--color-white);
+  }
+
+  .custom-form-grid {
+    @apply grid grid-cols-1 gap-6;
+  }
+
+  .custom-form-field {
+    @apply flex flex-col gap-2 col-span-12;
+  }
+
+  .custom-form-field-row {
+    @apply flex flex-row gap-2 col-span-12;
+  }
+
+  .custom-form-section {
+    @apply text-xl font-semibold col-span-12;
+  }
+}
+
+.p-toolbar {
+  @apply rounded-lg shadow-md;
+  background: var(--surface-card) !important;
+}
+
+.form-error {
+  display: block;
+  margin-top: .25rem;
+  font-size: .75rem;
+  color: var(--p-red-500);
+}
+
+/* ===== FIX PRIME CONFIRM DIALOG ===== */
+
+.p-confirmdialog-mask,
+.p-confirmpopup-mask {
+  z-index: 100000 !important;
+}
+
+.p-confirmdialog,
+.p-confirmpopup {
+  z-index: 100001 !important;
+}

@@ -1,0 +1,39 @@
+<!-- components/statistics-panel/statistics-panel.component.html -->
+
+<div class="flex flex-col gap-4">
+  <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center">
+    <h3 class="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider">
+      Estadísticas del Nivel
+    </h3>
+
+    <p-chart
+      type="doughnut"
+      [data]="chartData()"
+      [options]="chartOptions()"
+      styleClass="w-full h-48">
+    </p-chart>
+
+    <div class="w-full flex flex-col gap-2 mt-6">
+      <div class="flex justify-between p-2 bg-slate-50 rounded-md">
+        <span>Total Cupos</span>
+        <span class="font-bold text-blue-600">
+          {{ statistics().totalCapacity }}
+        </span>
+      </div>
+
+      <div class="flex justify-between p-2 bg-orange-50 rounded-md">
+        <span>Ocupados</span>
+        <span class="font-bold text-orange-600">
+          {{ statistics().totalEnrolled }}
+        </span>
+      </div>
+
+      <div class="flex justify-between p-2 bg-green-50 rounded-md">
+        <span>Disponibles</span>
+        <span class="font-bold text-green-600">
+          {{ statistics().totalAvailable }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

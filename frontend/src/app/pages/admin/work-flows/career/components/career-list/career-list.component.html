@@ -1,0 +1,93 @@
+<p-table
+    #dt
+    [value]="items()"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    stripedRows
+>
+    <ng-template #caption>
+        <div class="custom-form-grid">
+            <div class="custom-form-grid md:grid-cols-12">
+                <div class="custom-form-field md:col-span-8">
+                    <h2>Listado de Carreras</h2>
+                </div>
+
+                <div class="custom-form-field md:col-span-4">
+                    <p-input-group>
+                        <input
+                            pInputText
+                            type="text"
+                            [value]="search()"
+                            (input)="onSearchInput($event)"
+                            placeholder="Buscar..."/>
+
+                        <p-button [icon]="CustomIcons.MAGNIFYING_GLASS_SOLID"></p-button>
+                    </p-input-group>
+                </div>
+
+                <div class="custom-form-field-row md:col-span-12 justify-start">
+                    <p-button label="Acción 1" [icon]="CustomIcons.DOWNLOAD_SOLID" severity="success"/>
+                    <p-button label="Acción 2" [icon]="CustomIcons.FILE_PDF_SOLID" severity="danger"/>
+                    <p-button label="Acción 3" [icon]="CustomIcons.FILE_AUDIO_SOLID" severity="info"/>
+                </div>
+
+                <div class="custom-form-field md:col-span-12">
+                    <p-paginator
+                        (onPageChange)="onPageChange($event)"
+                        [rows]="pagination().limit"
+                        [totalRecords]="pagination().totalItems"/>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #header>
+        <tr>
+            <th>Code</th>
+            <th>Shortname</th>
+            <th>Logo</th>
+            <th>Resolution Number</th>
+            <th>
+                <p-button
+                    pTooltip="Crear"
+                    [icon]="CustomIcons.PLUS_SOLID"
+                    severity="success"
+                    (onClick)="goToCreate()"
+                />
+            </th>
+        </tr>
+    </ng-template>
+
+    <ng-template
+        #body
+        let-item
+        let-rowIndex="rowIndex">
+        <tr>
+            <td>{{ item.code }}</td>
+            <td>{{ item.shortName }}</td>
+            <td>
+                <img
+                    [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + item.logo"
+                    [alt]="item.logo"
+                    class="w-24 rounded"/>
+            </td>
+            <td>{{ item.resolutionNumber }}</td>
+            <td>
+                <p-button
+                    pTooltip="Gestionar"
+                    [icon]="CustomIcons.ELLIPSIS_VERTICAL_SOLID"
+                    (click)="onSelect({item,index:rowIndex})"/>
+            </td>
+        </tr>
+    </ng-template>
+
+    <ng-template #footer>
+        <tr>
+            <td colspan="6">En total existen {{ items() ? pagination().totalItems : 0 }} items.</td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<app-button-action
+    [buttonActions]="buttonActions()"
+    [enabled]="isButtonActionsEnabled"
+    (isHide)="isButtonActionsEnabled = $event"/>

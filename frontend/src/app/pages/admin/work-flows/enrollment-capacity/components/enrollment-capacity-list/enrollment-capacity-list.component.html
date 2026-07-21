@@ -1,0 +1,39 @@
+<div class="flex flex-col gap-6 p-4">
+    <p-confirmDialog [style]="{ width: '450px' }" [baseZIndex]="10000"></p-confirmDialog>
+
+    <app-filter-panel></app-filter-panel>
+
+    @if (store.hasFilters()) {
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <app-statistics-panel
+                [chartData]="store.chartData()"
+                [chartOptions]="store.chartOptions()"
+                [statistics]="store.statistics()">
+            </app-statistics-panel>
+
+            <app-capacity-matrix
+                class="col-span-1 lg:col-span-3"
+                [matrix]="store.matrix()"
+                (edit)="openEditModal($event)"
+                (create)="openCreateModal()">
+            </app-capacity-matrix>
+        </div>
+    } @else {
+        <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <i class="pi pi-filter text-5xl text-slate-300 mb-4"></i>
+            <h3 class="text-lg font-bold text-slate-600">Seleccione los filtros principales</h3>
+            <p class="text-slate-500 max-w-md mt-2">
+                Debe seleccionar una Carrera y un Período Escolar para visualizar la matriz de cupos y las estadísticas.
+            </p>
+        </div>
+    }
+
+    <app-capacity-modal
+        [visible]="store.modalVisible()"
+        [editMode]="store.isEditMode()"
+        [parallels]="store.parallels()"
+        [workdays]="store.workdays()"
+        [classrooms]="store.classrooms()"
+        [subjects]="store.subjects()">
+    </app-capacity-modal>
+</div>

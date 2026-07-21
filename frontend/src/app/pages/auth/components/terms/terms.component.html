@@ -1,0 +1,21 @@
+<div class="custom-form-grid md:grid-cols-12 bg-gray-100">
+    <div class="custom-form-field md:col-span-3">
+    </div>
+
+    <div class="custom-form-field md:col-span-9 sm:col-span-12">
+        <pdf-viewer
+            [src]="environment.APP_PATH_ASSETS+'/auth/files/legal.pdf'"
+            [render-text]="true"
+            [original-size]="false"
+            style="width: 70%; height: 80vh">
+        </pdf-viewer>
+    </div>
+
+    <div class="custom-form-field md:col-span-3 md:col-start-4">
+        <p-button
+            label="He leído y acepto los Términos y Condiciones"
+            styleClass="w-full"
+            [icon]="CustomIcons.CHECK_DOUBLE_SOLID"
+            (onClick)="onSubmit()" />
+    </div>
+</div>

@@ -1,0 +1,183 @@
+<div class="custom-form-card">
+    <form class="custom-form-grid md:grid-cols-12">
+        <!-- backButton -->
+        <div class="custom-form-field md:col-span-12">
+            <p-button
+                pTooltip="Regresar"
+                [icon]="CustomIcons.CHEVRON_LEFT_SOLID"
+                severity="warn"
+                [raised]="true"
+                [text]="true"
+                [routerLink]="[MY_ROUTES.authPages.signIn.absolute]"/>
+        </div>
+
+        <!-- section -->
+        <div class="custom-form-section md:col-span-12 text-center">
+            Creación de la Cuenta
+        </div>
+
+        <!-- identificationField -->
+        <div class="custom-form-field md:col-span-12">
+            <label
+                appLabel
+                for="identification"
+                label="Número de cédula"
+                [field]="formData.identification"></label>
+
+            <input pInputText type="text" id="identification" [formField]="formData.identification" pKeyFilter="pint"/>
+
+            <small [appErrorMessage]="$any(formData.identification)"></small>
+
+            @if (formData.identification().errors()) {
+                <p-message severity="error">
+                    <b>El usuario ya existe</b>
+                    <p>Por favor ingrese otro RUC</p>
+                </p-message>
+            }
+        </div>
+
+        <!-- emailField -->
+        <div class="custom-form-field md:col-span-12">
+            <label
+                appLabel for="email"
+                label="Correo electrónico"
+                [field]="formData.email"></label>
+
+            <input pInputText type="email" id="email" [formField]="formData.email"/>
+
+            <small [appErrorMessage]="$any(formData.email)"></small>
+        </div>
+
+        <!-- requestTransactionalCode -->
+        <div class="custom-form-field md:col-span-12">
+            <p-button
+                severity="info"
+                styleClass="w-full"
+                [icon]="CustomIcons.PAPER_PLANE_SOLID"
+                [label]="!transactionalCodeControl().disabled()?'Reenviar código':'Solicitar código'"
+                [outlined]="true"
+                [raised]="true"
+                [disabled]="formData.email().disabled()"
+                (onClick)="requestTransactionalCode()"/>
+        </div>
+
+        @if (!transactionalCodeControl().disabled()) {
+            <!-- transactionalCodeControl -->
+            <div class="custom-form-field md:col-span-12">
+                <label
+                    appLabel for="transactionalCode"
+                    label="Código de seguridad"
+                    [field]="transactionalCodeControl"></label>
+
+                <app-transactional-code
+                    [formField]="transactionalCodeControl"
+                    [requester]="formData.email().value()"
+                    [pAutoFocus]="true"/>
+
+                <small [appErrorMessage]="$any(transactionalCodeControl)"></small>
+            </div>
+        }
+
+        @if (!formData.password().disabled() && transactionalCodeControl().valid()) {
+            <!-- passwordField -->
+            <div class="custom-form-field md:col-span-12">
+                <label
+                    appLabel
+                    for="password"
+                    label="Contraseña"
+                    [field]="formData.password">
+                </label>
+                <p-inputgroup>
+                    <input
+                        pInputText
+                        id="password"
+                        [type]="showPassword() ? 'text' : 'password'"
+                        [formField]="formData.password"/>
+
+                    <p-button [pTooltip]="showPassword() ? 'Ocultar' : 'Mostrar'"
+                              [icon]="showPassword() ? CustomIcons.EYE_SLASH_REGULAR:CustomIcons.EYE_REGULAR"
+                              (onClick)="togglePassword()"/>
+                </p-inputgroup>
+
+                <small [appErrorMessage]="$any(formData.password)"></small>
+            </div>
+
+            <!-- passwordConfirmField -->
+            <div class="custom-form-field md:col-span-12">
+                <label
+                    appLabel
+                    for="passwordConfirm"
+                    [field]="formData.passwordConfirm"
+                    label="Confirmar contraseña"></label>
+
+                <p-inputgroup>
+                    <input
+                        pInputText
+                        id="passwordConfirm"
+                        [type]="showPasswordConfirm() ? 'text' : 'password'"
+                        [formField]="formData.passwordConfirm"/>
+
+                    <p-button [pTooltip]="showPasswordConfirm() ? 'Ocultar' : 'Mostrar'"
+                              [icon]="showPasswordConfirm() ? CustomIcons.EYE_SLASH_REGULAR:CustomIcons.EYE_REGULAR"
+                              (onClick)="togglePasswordConfirm()"/>
+                </p-inputgroup>
+
+                <small [appErrorMessage]="$any(formData.passwordConfirm)"></small>
+            </div>
+
+            <!-- securityQuestions title -->
+            <div class="md:col-span-12">
+                <h4>Preguntas de seguridad:</h4>
+
+                <small class="text-gray-500">
+                    Tus respuestas nos ayudarán a recuperar tu cuenta si alguna vez lo necesitas.
+                </small>
+            </div>
+
+            @for (securityQuestion of securityQuestionForms; track $index) {
+                <div class="custom-form-field">
+                    <label>
+                        {{ securityQuestion.question().value().name }}
+                    </label>
+
+                    <input pInputText [formField]="securityQuestion.answer"/>
+
+                    <small [appErrorMessage]="$any(securityQuestion.answer)"></small>
+                </div>
+            }
+
+            {{securityQuestionForms.length | json}}
+
+            <!-- termsAcceptedAtField -->
+            <div class="custom-form-field md:col-span-12">
+                <div class="flex items-center">
+                    <p-checkbox
+                        inputId="termsAcceptedAt"
+                        [formField]="formData.termsAcceptedAt"
+                        [binary]="true"
+                        (click)="openTerms()"/>
+
+                    <p-button
+                        label="He leído y acepto los Términos y Condiciones"
+                        [link]="true"
+                        (onClick)="openTerms()"
+                    />
+                </div>
+
+                <small [appErrorMessage]="$any(formData.termsAcceptedAt)"></small>
+            </div>
+
+            <!-- saveButton -->
+            <div class="custom-form-field md:col-span-12">
+                <p-button
+                    label="Crear Cuenta"
+                    severity="success"
+                    styleClass="w-full"
+                    [outlined]="true"
+                    [raised]="true"
+                    [icon]="CustomIcons.USER_PLUS_SOLID"
+                    (onClick)="onSubmit()"/>
+            </div>
+        }
+    </form>
+</div>

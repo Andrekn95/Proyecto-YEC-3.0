@@ -1,0 +1,40 @@
+<div class="custom-form-card">
+    <form class="custom-form-grid md:grid-cols-12">
+        <!-- title -->
+        <div class="custom-form-section md:col-span-12">
+            <h4>
+                Datos Principales
+            </h4>
+        </div>
+
+        <!-- code -->
+        <div class="custom-form-field md:col-span-6">
+            <label
+                appLabel
+                for="code"
+                label="Nombre corto de la carrera"
+                [field]="formData.code">
+            </label>
+
+            <input pInputText id="code" [formField]="formData.code">
+
+            <small [appErrorMessage]="$any(formData.code)"></small>
+        </div>
+
+        <!-- shortName -->
+        @if (formData.shortName().required()) {
+            <div class="custom-form-field md:col-span-6">
+                <label
+                    appLabel
+                    for="shortName"
+                    label="Nombre corto de la carrera"
+                    [field]="formData.shortName">
+                </label>
+
+                <input pInputText id="shortName" [formField]="formData.shortName">
+
+                <small [appErrorMessage]="$any(formData.shortName)"></small>
+            </div>
+        }
+    </form>
+</div>

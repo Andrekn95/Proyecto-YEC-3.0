@@ -1,0 +1,138 @@
+<p-dialog
+    [visible]="visible()"
+    [header]="editMode() ? 'Editar Cupo de Matrícula' : 'Crear Nuevo Cupo'"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+    (onHide)="store.closeModal()">
+
+    <div class="flex flex-col gap-4 mt-2">
+        @if (!editMode()) {
+            <div class="custom-form-field">
+                <label
+                    appLabel
+                    for="subjectId"
+                    label="Nivel Académico"
+                    [field]="formData.subjectId">
+                </label>
+
+              <p-select
+                    id="subjectId"
+                    name="subjectId"
+                    [options]="levels()"
+                    optionLabel="name"
+                    optionValue="id"
+                    [ngModel]="form$().subjectId"
+                  (ngModelChange)="onSubjectChange($event)"
+                    placeholder="Seleccione un nivel académico"
+                    appendTo="body"
+                    styleClass="w-full">
+                </p-select> 
+
+                <small [appErrorMessage]="$any(formData.subjectId)"></small>
+            </div>
+
+            <div class="custom-form-field">
+                <label
+                    appLabel
+                    for="parallelId"
+                    label="Paralelo"
+                    [field]="formData.parallelId">
+                </label>
+
+               <p-select
+                    id="parallelId"
+                    name="parallelId"
+                    [options]="parallels()"
+                    optionLabel="name"
+                    optionValue="id"
+                    [ngModel]="form$().parallelId"
+                    (ngModelChange)="onParallelChange($event)"
+                    placeholder="Seleccione un paralelo"
+                    appendTo="body"
+                    styleClass="w-full">
+                </p-select>  
+
+                <small [appErrorMessage]="$any(formData.parallelId)"></small>
+            </div>
+
+            <div class="custom-form-field">
+                <label
+                    appLabel
+                    for="workdayId"
+                    label="Horario"
+                    [field]="formData.workdayId">
+                </label>
+
+              <p-select
+                    id="workdayId"
+                    name="workdayId"
+                    [options]="workdays()"
+                    optionLabel="name"
+                    optionValue="id"
+                    [ngModel]="form$().workdayId"
+                    (ngModelChange)="onWorkdayChange($event)"
+                    placeholder="Seleccione un horario"
+                    appendTo="body"
+                    styleClass="w-full">
+                </p-select> 
+
+                <small [appErrorMessage]="$any(formData.workdayId)"></small>
+            </div>
+        }
+
+        <div class="custom-form-field">
+            <label
+                appLabel
+                for="capacity"
+                label="Capacidad Máxima"
+                [field]="formData.capacity">
+            </label>
+
+            <p-inputNumber
+                id="capacity"
+                name="capacity"
+                [min]="1"
+                [max]="100"
+                [ngModel]="form$().capacity"
+                (ngModelChange)="onCapacityChange($event)"
+                styleClass="w-full">
+            </p-inputNumber>
+
+            <small [appErrorMessage]="$any(formData.capacity)"></small>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-between items-center w-full">
+            @if (editMode()) {
+                <button
+                    pButton
+                    type="button"
+                    severity="danger"
+                    icon="pi pi-trash"
+                    label="Eliminar"
+                    (click)="store.confirmDelete()">
+                </button>
+            }
+
+            <div class="flex gap-2 ml-auto">
+                <button
+                    pButton
+                    type="button"
+                    severity="secondary"
+                    icon="pi pi-times"
+                    label="Cancelar"
+                    (click)="store.closeModal()">
+                </button>
+
+                <button
+                    pButton
+                    type="button"
+                    icon="pi pi-check"
+                    [label]="editMode() ? 'Actualizar' : 'Guardar'"
+                    (click)="onSaveClick()">
+                </button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>

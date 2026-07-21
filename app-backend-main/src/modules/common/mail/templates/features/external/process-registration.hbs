@@ -1,0 +1,49 @@
+<p>Estimado/a {{data.establishment.ruc.legalName}},</p>
+
+<p>
+  Su trámite correspondiente a {{data.process.type.name}} ha sido enviado, adjunto encontrará
+  el comprobante del envío de la solicitud”:
+</p>
+
+<div class="code-container">
+  <table border="1">
+    <tr>
+      <th>INFORMACIÓN DEL PRESTADOR DE SERVICIOSTURÍSTICO</th>
+      <th>UBICACIÓN DEL PRESTADOR DESERVICIOS TURÍSTICO </th>
+    </tr>
+    <tr>
+      <td>
+        <ul>
+          <li>RUC: {{data.establishment.ruc.number}}</li>
+          <li>Razón Social: {{data.establishment.ruc.legalName}}</li>
+          <li>Fecha de Solicitud: {{data.process.registeredAt}}</li>
+          <li>Actividad: {{data.process.activity.name}}</li>
+          <li>Clasificación: {{data.classifications}}</li>
+        </ul>
+      </td>
+      <td>
+        <ul>
+          <li>Provincia: {{data.establishment.province.name}}</li>
+          <li>Cantón: {{data.establishment.canton.name}}</li>
+          <li>Parroquia: {{data.establishment.parish.name}}</li>
+          <li>Calle Principal: {{data.establishment.mainStreet}}</li>
+          <li>Numeración: {{data.establishment.numberStreet}}</li>
+          <li>Calle Secundaria: {{data.establishment.secondaryStreet}}</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>
+  El Registro Turístico es único y se otorga solo una vez, todas las clasificaciones
+  incorporadas en el Registro de Turismo, tienen vigencia de 4 años.
+</p>
+
+<p>
+  <b>Saludos Cordiales,</b>
+</p>
+<p>
+  "MINISTERIO DE PRODUCCIÓN, COMERCIO EXTERIOR E INVERSIONES"
+</p>
+

@@ -1,0 +1,55 @@
+<div class="custom-form-card">
+    <form class="custom-form-grid md:grid-cols-12">
+        <div class="custom-form-section md:col-span-12">
+            <h4>Gestión de Capacidad de Matrícula</h4>
+        </div>
+
+        <div class="custom-form-field md:col-span-6">
+            <label
+                appLabel
+                for="careerId"
+                label="Carrera"
+                [field]="formData.careerId">
+            </label>
+
+            <p-select
+                id="careerId"
+                name="careerId"
+                [options]="store.careers()"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Seleccione la carrera"
+                [ngModel]="form$().careerId"
+                (ngModelChange)="onCareerChange($event)"
+                appendTo="body"
+                styleClass="w-full">
+            </p-select>
+
+            <small [appErrorMessage]="$any(formData.careerId)"></small>
+        </div>
+
+        <div class="custom-form-field md:col-span-6">
+            <label
+                appLabel
+                for="schoolPeriodId"
+                label="Período Escolar"
+                [field]="formData.schoolPeriodId">
+            </label>
+
+            <p-select
+                id="schoolPeriodId"
+                name="schoolPeriodId"
+                [options]="store.schoolPeriods()"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Seleccione"
+                [ngModel]="form$().schoolPeriodId"
+                (ngModelChange)="onSchoolPeriodChange($event)"
+                appendTo="body"
+                styleClass="w-full">
+            </p-select>
+
+            <small [appErrorMessage]="$any(formData.schoolPeriodId)"></small>
+        </div>
+    </form>
+</div>

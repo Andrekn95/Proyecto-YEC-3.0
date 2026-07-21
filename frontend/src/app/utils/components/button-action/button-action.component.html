@@ -1,0 +1,37 @@
+<p-drawer appendTo="body" [(visible)]="enabled" position="right" (onHide)="close()">
+    <ng-template #headless>
+        <div class="flex flex-col h-full">
+            <div class="flex items-center justify-between px-6 pt-4 shrink-0">
+                <span class="inline-flex items-center gap-2">
+                    <span class="font-semibold text-gray-500">
+                        Acciones
+                    </span>
+                </span>
+<!--                <span>-->
+<!--                    <p-button-->
+<!--                        type="button"-->
+<!--                        severity="secondary"-->
+<!--                        (click)="close()"-->
+<!--                        [outlined]="true"-->
+<!--                        [raised]="true"-->
+<!--                        [icon]="CustomIcons.XMARK_SOLID"-->
+<!--                        [rounded]="true"/>-->
+<!--                </span>-->
+            </div>
+            <p-divider/>
+            <div class="overflow-y-auto">
+                <p-panelMenu
+                    [model]="buttonActions"
+                    (click)="close()" />
+            </div>
+
+            <div class="mt-auto">
+                <p-divider />
+
+                <small class="m-4 flex text-gray-500">
+                    &copy; {{ environment.APP_SHORT_NAME }} {{ currentYear }}
+                </small>
+            </div>
+        </div>
+    </ng-template>
+</p-drawer>

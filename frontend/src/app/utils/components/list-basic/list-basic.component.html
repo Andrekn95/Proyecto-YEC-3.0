@@ -1,0 +1,86 @@
+<p-table
+    #dt
+    [value]="items()"
+    [columns]="cols()"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [globalFilterFields]="globalFilterFields"
+    [loading]="coreService.loading()">
+    <ng-template #caption>
+        <p-fluid>
+            <div class="custom-form-grid">
+                <div class="md:col-span-8 custom-form-field">
+                    <div class="custom-form-title">{{ title() }}</div>
+                </div>
+
+                <!--                <div class="md:col-span-4 custom-form-field">-->
+                <!--                    <p-iconfield>-->
+                <!--                        <p-inputicon>-->
+                <!--                            <i [class]="CustomIcons.MAGNIFYING_GLASS_SOLID"></i>-->
+                <!--                        </p-inputicon>-->
+
+                <!--                        <input-->
+                <!--                            pInputText type="text"-->
+                <!--                            (input)="onGlobalFilter($event)"-->
+                <!--                            placeholder="Buscar..." />-->
+                <!--                    </p-iconfield>-->
+                <!--                </div>-->
+            </div>
+        </p-fluid>
+    </ng-template>
+
+    <ng-template #header let-columns>
+        <tr>
+            @for (col of columns; track col) {
+                <th>
+                    {{ col.header }}
+                </th>
+            }
+
+            <th>
+                @if (buttonCreated()) {
+                    <p-button pTooltip="Crear" [icon]="CustomIcons.PLUS_SOLID" severity="success"
+                              (onClick)="create()" />
+                }
+            </th>
+        </tr>
+    </ng-template>
+
+    <ng-template #body let-item let-columns="columns" let-rowIndex="rowIndex">
+        <tr>
+            @for (col of columns; track col) {
+                @switch (col?.type) {
+                    @case ('object') {
+                        @if (item[col?.field][col?.objectName]) {
+                            <td>{{ item[col?.field][col?.objectName] }}</td>
+                        }
+
+                        @if (!item[col?.field][col?.objectName]) {
+                            <td>{{ item[col?.field]['name'] }}</td>
+                        }
+                    }
+                    @case ('date') {
+                        <td>{{ item[col.field] | date }}</td>
+                    }
+                    @default {
+                        <td>{{ item[col.field] }}</td>
+                    }
+                }
+            }
+
+            <td>
+                <p-button
+                    [raised]="true"
+                    [icon]="CustomIcons.ELLIPSIS_VERTICAL_SOLID"
+                    (click)="onSelect.emit({item,rowIndex})" />
+            </td>
+        </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+        <tr>
+            <td colspan="6">
+                No existen registros
+            </td>
+        </tr>
+    </ng-template>
+</p-table>

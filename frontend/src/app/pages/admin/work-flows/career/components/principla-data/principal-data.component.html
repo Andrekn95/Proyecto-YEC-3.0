@@ -1,0 +1,38 @@
+<div class="custom-form-card">
+    <form class="custom-form-grid md:grid-cols-12">
+        <!-- title -->
+        <div class="custom-form-title md:col-span-12">
+            <h4>
+                Titulo de la seccion
+            </h4>
+        </div>
+
+        <!-- code -->
+        <div class="custom-form-field md:col-span-12">
+            <label
+                appLabel
+                for="code"
+                label="Code"
+                [field]="formData.code">
+            </label>
+
+            <input pInputText id="code" [formField]="formData.code">
+
+            <small [appErrorMessage]="$any(formData.code)"></small>
+        </div>
+
+        <!-- name -->
+        <div class="custom-form-field md:col-span-12">
+            <label
+                appLabel
+                for="name"
+                label="Name"
+                [field]="formData.name">
+            </label>
+
+            <input pInputText id="name" [formField]="formData.name">
+
+            <small [appErrorMessage]="$any(formData.name)"></small>
+        </div>
+    </form>
+</div>

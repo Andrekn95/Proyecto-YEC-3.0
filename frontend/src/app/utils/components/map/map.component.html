@@ -1,0 +1,12 @@
+@if (apiLoaded) {
+    <google-map
+        height="400px"
+        width="100%"
+        [center]="center"
+        [zoom]="zoom"
+        (mapClick)="onMapClick($event)">
+
+        <map-marker [position]="markerPosition" title="Aquí estás"></map-marker>
+
+    </google-map>
+}

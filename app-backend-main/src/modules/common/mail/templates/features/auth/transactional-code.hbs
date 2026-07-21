@@ -1,0 +1,21 @@
+<p>Hola {{data.user.name}} {{data.user.lastname}},</p>
+
+<p>
+  Hemos recibido una solicitud para verificar tu identidad.
+</p>
+
+<p class="code-message">
+  Tu código de verificación es:
+</p>
+
+<div class="code-container">
+  <div class="code">{{data.token}}</div>
+  <div class="expires">
+    Este código expirará en <strong>{{expiresIn}}</strong> minutos.
+  </div>
+</div>
+
+<p>
+  <b>¿No solicitaste este código?</b> Ignora este mensaje. Es probable que alguien haya escrito mal su correo;
+  <b>tu cuenta está segura.</b>
+</p>

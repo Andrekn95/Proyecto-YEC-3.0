@@ -1,0 +1,94 @@
+<p-table
+    [value]="items()"
+    [columns]="cols()"
+    [tableStyle]="{ 'min-width': '50rem' }"
+    [lazy]="true"
+    [loading]="coreService.loading()">
+    <ng-template #caption>
+        <p-fluid>
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <div class="md:col-span-8 flex flex-col gap-2">
+                    <span class="text-xl font-bold">{{ title() }}</span>
+                </div>
+
+                <div class="md:col-span-4 flex flex-col gap-2">
+                    <p-iconfield>
+                        <p-inputicon>
+                            <i [class]="CustomIcons.MAGNIFYING_GLASS_SOLID"></i>
+                        </p-inputicon>
+
+                        <input pInputText [formControl]="searchControl"
+                               placeholder="Buscar..." />
+                    </p-iconfield>
+                </div>
+            </div>
+        </p-fluid>
+    </ng-template>
+
+    <ng-template #header let-columns>
+        <tr>
+            <th>
+                <p-button
+                    label="Nuevo"
+                    severity="success"
+                    [raised]="true"
+                    (onClick)="create()" />
+            </th>
+
+            @for (col of columns; track col) {
+                <th>
+                    {{ col.header }}
+                </th>
+            }
+        </tr>
+    </ng-template>
+
+    <ng-template #body let-item let-columns="columns" let-rowIndex="rowIndex">
+        <tr>
+            <td class="justify-center">
+                <p-button
+                    [raised]="true"
+                    [icon]="CustomIcons.ELLIPSIS_VERTICAL_SOLID"
+                    (click)="onSelect.emit({item,rowIndex})" />
+            </td>
+
+            @for (col of columns; track col) {
+                @switch (col?.type) {
+                    @case ('object') {
+                        <td>{{ item[col?.field][col?.objectName] }}</td>
+                    }
+                    @case ('date') {
+                        <td>{{ item[col.field] | date }}</td>
+                    }
+                    @case ('arrayObject') {
+                        <td>
+                            <ul>
+                                @for (arr of item[col?.field]; track arr) {
+                                    <li>
+                                        <p-tag [value]="arr[col?.objectName]" class="mb-2" severity="secondary" />
+                                    </li>
+                                }
+                            </ul>
+                        </td>
+                    }
+                    @default {
+                        <td>{{ item[col.field] }}</td>
+                    }
+                }
+            }
+        </tr>
+    </ng-template>
+
+    <ng-template #emptymessage>
+        <tr>
+            <td colspan="6">
+                No existen registros
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<p-paginator
+    (onPageChange)="onPageChange($event)"
+    [rows]="pagination().limit"
+    [totalRecords]="pagination().totalItems" />
