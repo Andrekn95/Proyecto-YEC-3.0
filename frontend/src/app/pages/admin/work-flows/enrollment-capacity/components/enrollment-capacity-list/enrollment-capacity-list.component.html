@@ -3,29 +3,63 @@
 
     <app-filter-panel></app-filter-panel>
 
-    <app-level-cards></app-level-cards>
+    @if (store.hasBothFilters()) {
+        <app-level-cards></app-level-cards>
+    }
 
-    @if (store.hasFilters()) {
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <app-statistics-panel
-                [chartData]="store.chartData()"
-                [chartOptions]="store.chartOptions()"
-                [statistics]="store.statistics()">
-            </app-statistics-panel>
-
-            <app-capacity-matrix
-                class="col-span-1 lg:col-span-3"
-                [matrix]="store.matrix()"
-                (edit)="openEditModal($event)"
-                (create)="openCreateModal()">
-            </app-capacity-matrix>
+    @if (store.showDetails()) {
+        <div class="flex justify-end">
+            <button
+                pButton
+                type="button"
+                icon="pi pi-plus"
+                label="Agregar Nuevo Cupo"
+                (click)="openCreateModal()">
+            </button>
         </div>
-    } @else {
+
+        @if (store.hasSelectedLevelDistributions()) {
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <app-statistics-panel
+                    [chartData]="store.chartData()"
+                    [chartOptions]="store.chartOptions()"
+                    [statistics]="store.statistics()">
+                </app-statistics-panel>
+
+                <app-capacity-matrix
+                    class="col-span-1 lg:col-span-3"
+                    [matrix]="store.matrix()"
+                    (edit)="openEditModal($event)"
+                    (create)="openCreateModal()">
+                </app-capacity-matrix>
+            </div>
+        } @else {
+            <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+                <i class="pi pi-inbox text-5xl text-slate-300 mb-4"></i>
+                <h3 class="text-lg font-bold text-slate-600">Sin cupos registrados</h3>
+                <p class="text-slate-500 max-w-md mt-2">
+                    Este nivel académico aún no tiene cupos registrados. Presione el botón <strong>"Agregar Nuevo Cupo"</strong> para crear el primer cupo.
+                </p>
+            </div>
+        }
+    }
+
+    @if (!store.hasBothFilters()) {
         <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
             <i class="pi pi-filter text-5xl text-slate-300 mb-4"></i>
             <h3 class="text-lg font-bold text-slate-600">Seleccione los filtros principales</h3>
             <p class="text-slate-500 max-w-md mt-2">
                 Debe seleccionar una Carrera y un Período Escolar para visualizar la matriz de cupos y las estadísticas.
+            </p>
+        </div>
+    }
+
+    @if (store.hasBothFilters() && !store.showDetails()) {
+        <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <i class="pi pi-arrow-up text-5xl text-slate-300 mb-4"></i>
+            <h3 class="text-lg font-bold text-slate-600">Seleccione un nivel académico</h3>
+            <p class="text-slate-500 max-w-md mt-2">
+                Elija uno de los niveles académicos disponibles para ver sus estadísticas y gestionar los cupos.
             </p>
         </div>
     }

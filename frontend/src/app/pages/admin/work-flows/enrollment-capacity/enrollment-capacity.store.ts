@@ -130,6 +130,20 @@ export class EnrollmentCapacityStore {
         return !!this.filterForm().schoolPeriodId;
     });
 
+    readonly hasBothFilters = computed<boolean>(() => {
+        return !!this.filterForm().careerId && !!this.filterForm().schoolPeriodId;
+    });
+
+    readonly showDetails = computed<boolean>(() => {
+        return this.hasBothFilters() && !!this.selectedSubjectId();
+    });
+
+    readonly hasSelectedLevelDistributions = computed<boolean>(() => {
+        const subjectId = this.selectedSubjectId();
+        if (!subjectId) return false;
+        return this.distributions().some((d) => d.subjectId === subjectId);
+    });
+
     updateFilterForm(update: Partial<FilterFormInterface>): void {
         this.filterForm.update((current) => ({...current, ...update}));
         this.saveFilterToStorage();

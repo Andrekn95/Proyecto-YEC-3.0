@@ -2,6 +2,7 @@
 
 import {Component, effect, inject, OnInit} from '@angular/core';
 import {ConfirmDialog} from 'primeng/confirmdialog';
+import {ButtonModule} from 'primeng/button';
 import {FilterPanelComponent} from '../filter-panel/filter-panel.component';
 import {StatisticsPanelComponent} from '../statistics-panel/statistics-panel.component';
 import {CapacityMatrixComponent} from '../capacity-matrix/capacity-matrix.component';
@@ -16,6 +17,7 @@ import {MY_ROUTES} from '@routes';
     selector: 'app-enrollment-capacity-list',
     imports: [
         ConfirmDialog,
+        ButtonModule,
         FilterPanelComponent,
         StatisticsPanelComponent,
         CapacityMatrixComponent,

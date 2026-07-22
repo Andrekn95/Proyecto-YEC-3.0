@@ -39,13 +39,12 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
     readonly classrooms = input.required<ClassroomInterface[]>();
     readonly subjects = input.required<SubjectInterface[]>();
 
-   
-    protected readonly levels = computed(() =>
-        this.subjects().map((s) => ({
-            id: s.id,
-            name: s.name,
-        }))
-    );
+      protected readonly selectedLevelName = computed(() => {
+        const id = this.store.selectedSubjectId();
+        if (!id) return '';
+        const subject = this.subjects().find((s) => s.id === id);
+        return subject?.name ?? '';
+    });
 
     protected readonly form$: WritableSignal<ModalFormInterface> = signal({...INITIAL_MODAL_FORM});
     protected readonly formData: FieldTree<ModalFormInterface> = this.buildForm();
@@ -65,11 +64,6 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
         this.formRegistryService.unregister(FORM_STATE_KEY);
-    }
-
-    protected onSubjectChange(value: string): void {
-        this.form$.update(current => ({...current, subjectId: value}));
-        this.store.updateModalForm({subjectId: value});
     }
 
     protected onParallelChange(value: string): void {
