@@ -233,6 +233,7 @@ export class EnrollmentCapacityStore {
             parallelId: cell.parallelId,
             workdayId: cell.workdayId,
             subjectId: cell.subjectId,
+            classroomId: cell.classroomId,
         });
         this.modalVisible.set(true);
     }
@@ -312,6 +313,7 @@ export class EnrollmentCapacityStore {
                 workdayId: selectedCell.workdayId,
                 subjectId: selectedCell.subjectId,
                 schoolPeriodId: selectedCell.schoolPeriodId,
+                classroomId: modalData.classroomId || selectedCell.classroomId,
             };
 
             this.httpService.update(selectedCell.id, payload).subscribe({
@@ -329,7 +331,7 @@ export class EnrollmentCapacityStore {
                 },
             });
         } else {
-            if (!modalData.subjectId || !modalData.parallelId || !modalData.workdayId) {
+            if (!modalData.subjectId || !modalData.workdayId || !modalData.classroomId) {
                 this.customMessageService.showError({
                     summary: 'Error',
                     detail: 'Todos los campos son obligatorios',
@@ -337,12 +339,15 @@ export class EnrollmentCapacityStore {
                 return;
             }
 
+            const parallelId = modalData.parallelId ?? (this.parallels()[0]?.id ?? '');
+
             const payload: CreateTeacherDistributionPayload = {
                 capacity: modalData.capacity,
-                parallelId: modalData.parallelId,
+                parallelId,
                 workdayId: modalData.workdayId,
                 subjectId: modalData.subjectId,
                 schoolPeriodId: filterData.schoolPeriodId,
+                classroomId: modalData.classroomId,
                 hours: modalData.hours || 4,
             };
 
@@ -405,6 +410,7 @@ export class EnrollmentCapacityStore {
             const capacity = dist.capacity || 0;
             const enrolled = counts.get(dist.id) || 0;
 
+            const classroomName = dist.classroom?.name || '';
             const cell: CellInterface = {
                 id: dist.id,
                 horario: workdayName,
@@ -414,6 +420,8 @@ export class EnrollmentCapacityStore {
                 parallelId: dist.parallelId,
                 workdayId: dist.workdayId,
                 schoolPeriodId: dist.schoolPeriodId,
+                classroomId: dist.classroomId,
+                aula: classroomName,
                 nivelAcademico: academicPeriodName,
                 cupoMaximo: capacity,
                 estudiantesContados: enrolled,

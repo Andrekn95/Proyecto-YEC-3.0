@@ -36,6 +36,7 @@ export interface TeacherDistributionInterface {
     subjectId: string;
     teacherId: string | null;
     workdayId: string;
+    classroomId: string | null;
     capacity: number;
     hours: number | null;
     createdAt?: string;
@@ -76,6 +77,13 @@ export interface TeacherDistributionInterface {
         name: string;
         code?: string;
     };
+    classroom?: {
+        id: string;
+        name: string;
+        capacity: number;
+        code?: string;
+        location?: string;
+    };
     teacher?: {
         id: string;
         name: string;
@@ -91,6 +99,8 @@ export interface CellInterface {
     parallelId: string;
     workdayId: string;
     schoolPeriodId: string;
+    classroomId: string | null;
+    aula: string;
     nivelAcademico: string;
     cupoMaximo: number;
     estudiantesContados: number;
@@ -144,6 +154,7 @@ export interface ModalFormInterface {
     parallelId: string | null;
     workdayId: string | null;
     subjectId: string | null;
+    classroomId: string | null;
     teacherId?: string;
     hours?: number;
 }
@@ -154,6 +165,7 @@ export interface CreateTeacherDistributionPayload {
     workdayId: string;
     subjectId: string;
     schoolPeriodId: string;
+    classroomId?: string | null;
     hours?: number;
 }
 
@@ -163,6 +175,7 @@ export interface UpdateTeacherDistributionPayload {
     workdayId: string;
     subjectId: string;
     schoolPeriodId: string;
+    classroomId?: string | null;
 }
 
 export interface ChartDataInterface {
@@ -196,6 +209,7 @@ export const INITIAL_MODAL_FORM: ModalFormInterface = {
     parallelId: null,
     workdayId: null,
     subjectId: null,
+    classroomId: null,
     hours: 4,
 };
 

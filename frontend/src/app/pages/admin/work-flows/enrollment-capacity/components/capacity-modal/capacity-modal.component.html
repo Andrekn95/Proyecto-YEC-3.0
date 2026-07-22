@@ -18,30 +18,6 @@
             <div class="custom-form-field">
                 <label
                     appLabel
-                    for="parallelId"
-                    label="Paralelo"
-                    [field]="formData.parallelId">
-                </label>
-
-               <p-select
-                    id="parallelId"
-                    name="parallelId"
-                    [options]="parallels()"
-                    optionLabel="name"
-                    optionValue="id"
-                    [ngModel]="form$().parallelId"
-                    (ngModelChange)="onParallelChange($event)"
-                    placeholder="Seleccione un paralelo"
-                    appendTo="body"
-                    styleClass="w-full">
-                </p-select>  
-
-                <small [appErrorMessage]="$any(formData.parallelId)"></small>
-            </div>
-
-            <div class="custom-form-field">
-                <label
-                    appLabel
                     for="workdayId"
                     label="Horario"
                     [field]="formData.workdayId">
@@ -63,6 +39,30 @@
                 <small [appErrorMessage]="$any(formData.workdayId)"></small>
             </div>
         }
+
+        <div class="custom-form-field">
+            <label
+                appLabel
+                for="classroomId"
+                label="Aula"
+                [field]="formData.classroomId">
+            </label>
+
+            <p-select
+                id="classroomId"
+                name="classroomId"
+                [options]="classrooms()"
+                optionLabel="name"
+                optionValue="id"
+                [ngModel]="form$().classroomId"
+                (ngModelChange)="onClassroomChange($event)"
+                placeholder="Seleccione un aula"
+                appendTo="body"
+                styleClass="w-full">
+            </p-select>
+
+            <small [appErrorMessage]="$any(formData.classroomId)"></small>
+        </div>
 
         <div class="custom-form-field">
             <label

@@ -8,4 +8,5 @@ export class CreateTeacherDistributionDto extends PickType(TeacherDistributionDt
   'subjectId',
   'schoolPeriodId',
   'hours',
+  'classroomId',
 ]) {}

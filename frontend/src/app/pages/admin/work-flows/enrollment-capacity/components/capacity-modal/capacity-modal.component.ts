@@ -34,7 +34,6 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
 
     readonly visible = input.required<boolean>();
     readonly editMode = input.required<boolean>();
-    readonly parallels = input.required<CatalogueInterface[]>();
     readonly workdays = input.required<CatalogueInterface[]>();
     readonly classrooms = input.required<ClassroomInterface[]>();
     readonly subjects = input.required<SubjectInterface[]>();
@@ -47,6 +46,7 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
     });
 
     protected readonly form$: WritableSignal<ModalFormInterface> = signal({...INITIAL_MODAL_FORM});
+
     protected readonly formData: FieldTree<ModalFormInterface> = this.buildForm();
 
     constructor() {
@@ -66,9 +66,11 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
         this.formRegistryService.unregister(FORM_STATE_KEY);
     }
 
-    protected onParallelChange(value: string): void {
-        this.form$.update(current => ({...current, parallelId: value}));
-        this.store.updateModalForm({parallelId: value});
+    protected onClassroomChange(classroomId: string): void {
+        const classroom = this.classrooms().find((c) => c.id === classroomId);
+        const capacity = classroom ? classroom.capacity : this.form$().capacity;
+        this.form$.update((current) => ({...current, classroomId, capacity}));
+        this.store.updateModalForm({classroomId, capacity});
     }
 
     protected onWorkdayChange(value: string): void {

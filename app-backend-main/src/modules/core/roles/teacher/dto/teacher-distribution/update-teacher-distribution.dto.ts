@@ -7,4 +7,5 @@ export class UpdateTeacherDistributionDto extends PickType(TeacherDistributionDt
   'workdayId',
   'subjectId',
   'schoolPeriodId',
+  'classroomId',
 ]) {}

@@ -26,7 +26,8 @@ export class TeacherDistributionsService {
       .leftJoinAndSelect('subject.academicPeriod', 'academicPeriod')
       .leftJoinAndSelect('subject.career', 'career')
       .leftJoinAndSelect('td.workday', 'workday')
-      .leftJoinAndSelect('td.teacher', 'teacher');
+      .leftJoinAndSelect('td.teacher', 'teacher')
+      .leftJoinAndSelect('td.classroom', 'classroom');
 
     if (params.careerId) {
       query.andWhere('career.id = :careerId', { careerId: params.careerId });
@@ -64,7 +65,16 @@ export class TeacherDistributionsService {
 
   async findOne(id: string): Promise<TeacherDistributionEntity> {
     const entity = await this.repository.findOne({
-      relations: ['parallel', 'schoolPeriod', 'subject', 'workday', 'teacher'],
+      relations: [
+        'parallel',
+        'schoolPeriod',
+        'subject',
+        'subject.academicPeriod',
+        'subject.career',
+        'workday',
+        'teacher',
+        'classroom',
+      ],
       where: { id },
     });
 

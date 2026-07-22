@@ -9,7 +9,7 @@ import {
     UpdateDateColumn
 } from 'typeorm';
 import {
-    CatalogueEntity, PartialPermissionEntity,
+    CatalogueEntity, ClassroomEntity, PartialPermissionEntity,
     SchoolPeriodEntity,
     SubjectEntity,
     TeacherEntity
@@ -75,6 +75,12 @@ export class TeacherDistributionEntity {
     workday: CatalogueEntity;
     @Column({type: 'uuid', name: 'workday_id', comment: 'Jornada laboral del Profesor'})
     workdayId: string;
+
+    @ManyToOne(() => ClassroomEntity, {nullable: true})
+    @JoinColumn({name: 'classroom_id'})
+    classroom: ClassroomEntity;
+    @Column({type: 'uuid', name: 'classroom_id', nullable: true, comment: 'Aula asignada'})
+    classroomId: string;
 
     /** Columns **/
     @Column({

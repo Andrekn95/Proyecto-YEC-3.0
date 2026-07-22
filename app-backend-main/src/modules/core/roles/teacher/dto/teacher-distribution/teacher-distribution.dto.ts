@@ -8,4 +8,5 @@ export class TeacherDistributionDto {
   @IsOptional() schoolPeriodId: string;
   @IsOptional() teacherId: string;
   @IsOptional() hours: number;
+  @IsOptional() classroomId: string;
 }
