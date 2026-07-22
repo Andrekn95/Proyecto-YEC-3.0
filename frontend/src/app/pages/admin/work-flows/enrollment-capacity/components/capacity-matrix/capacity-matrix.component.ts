@@ -1,3 +1,5 @@
+//Muestra o edita la distribución por semestres/carreras.
+
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {ButtonModule} from 'primeng/button';
 import {RowInterface, CellInterface} from '../../enrollment-capacity.state';

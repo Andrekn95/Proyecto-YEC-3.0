@@ -160,7 +160,7 @@ export class EnrollmentCapacityStore {
         });
     }
 
-    loadDistributions(form: FilterFormInterface): void {
+    loadDistributions(form: Partial<FilterFormInterface>): void {
         if (!form.schoolPeriodId) {
             this.distributions.set([]);
             this.enrolledCounts.set(new Map());

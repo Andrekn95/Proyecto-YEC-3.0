@@ -1,3 +1,5 @@
+//Aqui se renderiza el panel de filtros de la sección de carrera
+
 import {Component, effect, inject, OnDestroy, OnInit, signal, WritableSignal} from '@angular/core';
 import {FieldTree, form} from '@angular/forms/signals';
 import {FormsModule} from '@angular/forms';

@@ -1,0 +1,52 @@
+┌─────────────────────────────────────────────────────────────────────┐
+│  app-enrollment-capacity-list     (contenedor/página principal)      │
+│  enrollment-capacity-list.component.html                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  app-filter-panel                                           │   │
+│  │  ───────────────                                            │   │
+│  │  Renderiza: 2 selects de PrimeNG                            │   │
+│  │  ─ Carrera (p-select) → store.careers()                     │   │
+│  │  ─ Período Escolar (p-select) → store.schoolPeriods()       │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ═══ Si hay filtro seleccionado (store.hasFilters()) ═══            │
+│                                                                     │
+│  ┌────────────────────┐  ┌──────────────────────────────────────┐   │
+│  │ app-statistics-panel│  │ app-capacity-matrix                 │   │
+│  │ ──────────────────  │  │ ─────────────────                   │   │
+│  │ Renderiza:         │  │ Renderiza:                          │   │
+│  │ ─ Gráfico doughnut  │  │ ─ Botón "Agregar Nuevo Cupo"       │   │
+│  │   (p-chart)        │  │ ─ Por cada Workday/Jornada:         │   │
+│  │ ─ 3 indicadores:   │  │   └─ Título de la jornada           │   │
+│  │   Total Cupos      │  │   └─ Grid de tarjetas (celdas):     │   │
+│  │   Ocupados         │  │      └─ Nivel académico             │   │
+│  │   Disponibles      │  │      └─ Paralelo + cupo (ej: A / 5) │   │
+│  └────────────────────┘  │      └─ Materia                     │   │
+│                          │      └─ Color semáforo:             │   │
+│                          │         verde (<70%),                │   │
+│                          │         naranja (70-90%),            │   │
+│                          │         rojo (>90%)                  │   │
+│                          └──────────────────────────────────────┘   │
+│                                                                     │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  app-capacity-modal  (p-dialog)                              │   │
+│  │  ────────────────                                            │   │
+│  │  Renderiza (modo CREAR):                                     │   │
+│  │  ─ Select: Nivel Académico  → store.subjects()              │   │
+│  │  ─ Select: Paralelo         → parallels() de la store       │   │
+│  │  ─ Select: Horario          → workdays() de la store        │   │
+│  │  ─ InputNumber: Capacidad Máxima                            │   │
+│  │                                                              │   │
+│  │  Renderiza (modo EDITAR):                                    │   │
+│  │  ─ Solo InputNumber: Capacidad Máxima                       │   │
+│  │  ─ Botón "Eliminar" + "Actualizar"                          │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+│                                                                     │
+│  ═══ Sin filtro seleccionado ═══                                    │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │  Mensaje: "Seleccione los filtros principales"               │   │
+│  │  Icono: pi pi-filter                                        │   │
+│  └──────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘

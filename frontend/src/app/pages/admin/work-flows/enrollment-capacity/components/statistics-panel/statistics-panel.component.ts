@@ -1,3 +1,4 @@
+//Muestra totales (cupos, paralelos, etc.) según los filtros.
 import {Component, input, Input} from '@angular/core';
 import {ChartModule} from 'primeng/chart';
 import {

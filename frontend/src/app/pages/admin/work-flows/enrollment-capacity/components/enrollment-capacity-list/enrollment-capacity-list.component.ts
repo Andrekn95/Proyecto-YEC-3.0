@@ -1,3 +1,5 @@
+//Lista los registros de cupos/capacidades guardados.
+
 import {Component, effect, inject, OnInit} from '@angular/core';
 import {ConfirmDialog} from 'primeng/confirmdialog';
 import {FilterPanelComponent} from '../filter-panel/filter-panel.component';
@@ -56,7 +58,7 @@ export class EnrollmentCapacityListComponent implements OnInit {
             }
 
             if (filters.schoolPeriodId) {
-                this.store.loadDistributions(filters);
+                this.store.loadDistributions({ schoolPeriodId: filters.schoolPeriodId });
             }
         });
     }
