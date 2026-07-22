@@ -262,6 +262,16 @@ export class EnrollmentCapacityStore {
     }
 
     confirmDelete(): void {
+        const cell = this.selectedCell();
+
+        if (cell && cell.estudiantesContados > 0) {
+            this.customMessageService.showError({
+                summary: 'No se puede eliminar',
+                detail: `El cupo tiene ${cell.estudiantesContados} estudiante(s) matriculado(s). No se puede eliminar un cupo con estudiantes asignados.`,
+            });
+            return;
+        }
+
         this.confirmationService.confirm({
             header: 'Eliminar distribución',
             message: '¿Está seguro de eliminar este cupo?',

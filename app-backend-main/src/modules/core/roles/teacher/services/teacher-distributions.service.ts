@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { ConfigEnum } from '@utils/enums';
 import { CoreRepositoryEnum } from '@modules/core/shared-core/enums';
 import { TeacherDistributionEntity } from '@modules/core/entities';
@@ -106,10 +106,19 @@ export class TeacherDistributionsService {
   async findEnrolledCounts(ids: string[]): Promise<Record<string, number>> {
     if (!ids.length) return {};
 
+    // FIXME: REMOVER EN PRODUCCIÓN — datos ficticios para probar semáforo y estadísticas
+    const distributions = await this.repository.find({
+      where: { id: In(ids) },
+      select: { id: true, capacity: true },
+    });
+
     const result: Record<string, number> = {};
-    for (const id of ids) {
-      result[id] = 0;
+    for (const dist of distributions) {
+      const max = dist.capacity || 30;
+      const enrolled = Math.round(Math.random() * max);
+      result[dist.id] = enrolled;
     }
+
     return result;
   }
 }
