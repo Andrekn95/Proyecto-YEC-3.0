@@ -315,8 +315,10 @@ export class EnrollmentCapacityStore {
             };
 
             this.httpService.update(selectedCell.id, payload).subscribe({
-                next: () => {
-                    this.loadDistributions(filterData);
+                next: (updated) => {
+                    this.distributions.update((list) =>
+                        list.map((d) => (d.id === updated.id ? updated : d))
+                    );
                     this.closeModal();
                 },
                 error: (err: any) => {
@@ -345,8 +347,13 @@ export class EnrollmentCapacityStore {
             };
 
             this.httpService.register(payload).subscribe({
-                next: () => {
-                    this.loadDistributions(filterData);
+                next: (created) => {
+                    this.distributions.update((list) => [...list, created]);
+                    this.enrolledCounts.update((map) => {
+                        const next = new Map(map);
+                        next.set(created.id, 0);
+                        return next;
+                    });
                     this.closeModal();
                 },
                 error: (err: any) => {
@@ -365,7 +372,14 @@ export class EnrollmentCapacityStore {
 
         this.httpService.remove(cell.id).subscribe({
             next: () => {
-                this.loadDistributions(this.filterForm());
+                this.distributions.update((list) =>
+                    list.filter((d) => d.id !== cell.id)
+                );
+                this.enrolledCounts.update((map) => {
+                    const next = new Map(map);
+                    next.delete(cell.id);
+                    return next;
+                });
                 this.closeModal();
             },
             error: (err: any) => {

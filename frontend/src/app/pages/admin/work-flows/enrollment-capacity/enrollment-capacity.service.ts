@@ -100,7 +100,7 @@ export class EnrollmentCapacityHttpService {
     }
 
     update(id: string, payload: UpdateTeacherDistributionPayload): Observable<TeacherDistributionInterface> {
-        return this.httpClient.put<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions/${id}`, payload).pipe(
+        return this.httpClient.patch<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions/${id}`, payload).pipe(
             map((response) => {
                 return Array.isArray(response.data) ? response.data[0] : response.data;
             })
