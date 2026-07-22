@@ -49,10 +49,17 @@ export class EnrollmentCapacityStore {
     readonly isLoading = signal<boolean>(false);
     readonly error = signal<string | null>(null);
     readonly enrolledCounts = signal<Map<string, number>>(new Map());
+    readonly selectedSubjectId = signal<string | null>(null);
+
+    readonly filteredDistributions = computed<TeacherDistributionInterface[]>(() => {
+        const selected = this.selectedSubjectId();
+        if (!selected) return this.distributions();
+        return this.distributions().filter((d) => d.subjectId === selected);
+    });
 
     readonly parallels = computed<CatalogueInterface[]>(() => {
         const parallelsMap = new Map<string, CatalogueInterface>();
-        this.distributions().forEach((dist) => {
+        this.filteredDistributions().forEach((dist) => {
             if (dist.parallel && !parallelsMap.has(dist.parallel.id)) {
                 parallelsMap.set(dist.parallel.id, {
                     id: dist.parallel.id,
@@ -66,7 +73,7 @@ export class EnrollmentCapacityStore {
 
     readonly workdays = computed<CatalogueInterface[]>(() => {
         const workdaysMap = new Map<string, CatalogueInterface>();
-        this.distributions().forEach((dist) => {
+        this.filteredDistributions().forEach((dist) => {
             if (dist.workday && !workdaysMap.has(dist.workday.id)) {
                 workdaysMap.set(dist.workday.id, {
                     id: dist.workday.id,
@@ -80,7 +87,7 @@ export class EnrollmentCapacityStore {
 
     readonly academicPeriods = computed<CatalogueInterface[]>(() => {
         const periodsMap = new Map<string, CatalogueInterface>();
-        this.distributions().forEach((dist) => {
+        this.filteredDistributions().forEach((dist) => {
             const academicPeriod = dist.subject?.academicPeriod;
             if (academicPeriod && !periodsMap.has(academicPeriod.id)) {
                 periodsMap.set(academicPeriod.id, {
@@ -93,15 +100,27 @@ export class EnrollmentCapacityStore {
         return Array.from(periodsMap.values());
     });
 
+    readonly distributionSubjects = computed<SubjectInterface[]>(() => {
+        const subjectsMap = new Map<string, SubjectInterface>();
+        this.distributions().forEach((dist) => {
+            if (dist.subject && !subjectsMap.has(dist.subject.id)) {
+                subjectsMap.set(dist.subject.id, dist.subject as SubjectInterface);
+            }
+        });
+        return Array.from(subjectsMap.values());
+    });
+
     readonly matrix = computed<RowInterface[]>(() => {
         this.enrolledCounts();
-        return this.buildEnrollmentMatrix(this.distributions());
+        return this.buildEnrollmentMatrix(this.filteredDistributions());
     });
 
     readonly statistics = computed<EnrollmentCapacityStatistics>(() => {
         this.enrolledCounts();
-        return this.calculateEnrollmentStatistics(this.distributions());
+        return this.calculateEnrollmentStatistics(this.filteredDistributions());
     });
+
+    readonly hasLevelSelected = computed<boolean>(() => !!this.selectedSubjectId());
 
     readonly chartData = computed<ChartDataInterface>(() => {
         return this.buildEnrollmentChart(this.statistics());
@@ -182,10 +201,17 @@ export class EnrollmentCapacityStore {
         });
     }
 
-    openCreateModal(): void {
+    selectSubject(subjectId: string | null): void {
+        this.selectedSubjectId.set(subjectId);
+    }
+
+    openCreateModal(subjectId?: string): void {
         this.isEditMode.set(false);
         this.selectedCell.set(null);
-        this.modalForm.set({...INITIAL_MODAL_FORM});
+        this.modalForm.set({
+            ...INITIAL_MODAL_FORM,
+            subjectId: subjectId || null,
+        });
         this.modalVisible.set(true);
     }
 

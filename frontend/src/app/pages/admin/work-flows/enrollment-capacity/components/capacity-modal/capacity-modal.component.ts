@@ -43,7 +43,7 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
     protected readonly levels = computed(() =>
         this.subjects().map((s) => ({
             id: s.id,
-            name: s.academicPeriod?.name ?? s.name,
+            name: s.name,
         }))
     );
 

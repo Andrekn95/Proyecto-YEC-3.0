@@ -20,11 +20,14 @@ export class SubjectsController {
   async findByCareer(
     @Param('careerId', ParseUUIDPipe) careerId: string,
   ): Promise<ResponseHttpInterface> {
-    const data = await this.repository.find({
-      relations: { academicPeriod: true, career: true },
-      where: { careerId, isVisible: true },
-      order: { name: 'ASC' },
-    });
+    const data = await this.repository
+      .createQueryBuilder('subject')
+      .leftJoinAndSelect('subject.academicPeriod', 'academicPeriod')
+      .leftJoinAndSelect('subject.career', 'career')
+      .where('subject.isVisible = :isVisible', { isVisible: true })
+      .andWhere('(subject.careerId = :careerId OR subject.careerId IS NULL)', { careerId })
+      .orderBy('subject.name', 'ASC')
+      .getMany();
     return { data, message: 'Materias por carrera', title: 'Consultado' };
   }
 }
