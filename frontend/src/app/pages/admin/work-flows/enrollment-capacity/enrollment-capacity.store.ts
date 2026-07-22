@@ -25,15 +25,13 @@ import {
 } from './enrollment-capacity.state';
 import { environment } from '@env/environment';
 
-const FILTER_STATE_KEY = 'enrollmentCapacityFilter';
-
 @Injectable({providedIn: 'root'})
 export class EnrollmentCapacityStore {
     private readonly httpService = inject(EnrollmentCapacityHttpService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly customMessageService = inject(CustomMessageService);
 
-    readonly filterForm = signal<FilterFormInterface>(this.loadFilterFromStorage());
+    readonly filterForm = signal<FilterFormInterface>({...INITIAL_FILTER_FORM});
     readonly modalForm = signal<ModalFormInterface>({...INITIAL_MODAL_FORM});
 
     readonly careers = signal<CatalogueInterface[]>([]);
@@ -146,7 +144,6 @@ export class EnrollmentCapacityStore {
 
     updateFilterForm(update: Partial<FilterFormInterface>): void {
         this.filterForm.update((current) => ({...current, ...update}));
-        this.saveFilterToStorage();
     }
 
     updateModalForm(update: Partial<ModalFormInterface>): void {
@@ -154,7 +151,6 @@ export class EnrollmentCapacityStore {
     }
 
     loadInitialData(): void {
-        
         this.isLoading.set(true);
         this.error.set(null);
 
@@ -508,14 +504,5 @@ export class EnrollmentCapacityStore {
                 },
             ],
         };
-    }
-
-    private loadFilterFromStorage(): FilterFormInterface {
-        const stored = sessionStorage.getItem(FILTER_STATE_KEY);
-        return stored ? JSON.parse(stored) : INITIAL_FILTER_FORM;
-    }
-
-    private saveFilterToStorage(): void {
-        sessionStorage.setItem(FILTER_STATE_KEY, JSON.stringify(this.filterForm()));
     }
 }
