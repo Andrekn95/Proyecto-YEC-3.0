@@ -83,31 +83,6 @@ export class EnrollmentCapacityStore {
         return Array.from(workdaysMap.values());
     });
 
-    readonly academicPeriods = computed<CatalogueInterface[]>(() => {
-        const periodsMap = new Map<string, CatalogueInterface>();
-        this.filteredDistributions().forEach((dist) => {
-            const academicPeriod = dist.subject?.academicPeriod;
-            if (academicPeriod && !periodsMap.has(academicPeriod.id)) {
-                periodsMap.set(academicPeriod.id, {
-                    id: academicPeriod.id,
-                    name: academicPeriod.name,
-                    code: academicPeriod.description || '',
-                });
-            }
-        });
-        return Array.from(periodsMap.values());
-    });
-
-    readonly distributionSubjects = computed<SubjectInterface[]>(() => {
-        const subjectsMap = new Map<string, SubjectInterface>();
-        this.distributions().forEach((dist) => {
-            if (dist.subject && !subjectsMap.has(dist.subject.id)) {
-                subjectsMap.set(dist.subject.id, dist.subject as SubjectInterface);
-            }
-        });
-        return Array.from(subjectsMap.values());
-    });
-
     readonly matrix = computed<RowInterface[]>(() => {
         this.enrolledCounts();
         return this.buildEnrollmentMatrix(this.filteredDistributions());
@@ -122,10 +97,6 @@ export class EnrollmentCapacityStore {
 
     readonly chartData = computed<ChartDataInterface>(() => {
         return this.buildEnrollmentChart(this.statistics());
-    });
-
-    readonly hasFilters = computed<boolean>(() => {
-        return !!this.filterForm().schoolPeriodId;
     });
 
     readonly hasBothFilters = computed<boolean>(() => {

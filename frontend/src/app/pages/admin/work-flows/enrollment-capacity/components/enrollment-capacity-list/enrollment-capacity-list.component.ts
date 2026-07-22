@@ -1,5 +1,3 @@
-//Lista los registros de cupos/capacidades guardados.
-
 import {Component, effect, inject, OnInit} from '@angular/core';
 import {ConfirmDialog} from 'primeng/confirmdialog';
 import {ButtonModule} from 'primeng/button';
