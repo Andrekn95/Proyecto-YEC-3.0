@@ -23,7 +23,50 @@ import {
     INITIAL_MODAL_FORM,
     SubjectInterface,
 } from './enrollment-capacity.state';
-import { environment } from '@env/environment';
+
+function calculateColorSemaforo(capacity: number, enrolled: number): 'verde' | 'naranja' | 'rojo' {
+    if (capacity === 0) return 'rojo';
+    const percentage = (enrolled / capacity) * 100;
+    if (percentage >= 90) return 'rojo';
+    if (percentage >= 70) return 'naranja';
+    return 'verde';
+}
+
+function buildCellFromDistribution(
+    dist: TeacherDistributionInterface,
+    enrolled: number,
+): CellInterface {
+    const capacity = dist.capacity || 0;
+    return {
+        id: dist.id,
+        horario: dist.workday?.name || 'Sin Jornada',
+        paralelo: dist.parallel?.name || 'Sin Paralelo',
+        materia: dist.subject?.name || 'Sin Materia',
+        subjectId: dist.subjectId,
+        parallelId: dist.parallelId,
+        workdayId: dist.workdayId,
+        schoolPeriodId: dist.schoolPeriodId,
+        classroomId: dist.classroomId,
+        aula: dist.classroom?.name || '',
+        nivelAcademico: dist.subject?.academicPeriod?.name || 'Sin Nivel',
+        cupoMaximo: capacity,
+        estudiantesContados: enrolled,
+        colorSemaforo: calculateColorSemaforo(capacity, enrolled),
+        teacherDistributionId: dist.id,
+    };
+}
+
+function buildCountsMap(
+    distributions: TeacherDistributionInterface[],
+    counts: Record<string, number>,
+): Map<string, number> {
+    const map = new Map<string, number>();
+    distributions.forEach(d => map.set(d.id, counts[d.id] ?? 0));
+    return map;
+}
+
+const FALLBACK_WORKDAY = 'Sin Jornada';
+const FALLBACK_SUBJECT = 'Sin Materia';
 
 @Injectable({providedIn: 'root'})
 export class EnrollmentCapacityStore {
@@ -49,13 +92,13 @@ export class EnrollmentCapacityStore {
     readonly enrolledCounts = signal<Map<string, number>>(new Map());
     readonly selectedSubjectId = signal<string | null>(null);
 
-    readonly filteredDistributions = computed<TeacherDistributionInterface[]>(() => {
+    readonly filteredDistributions = computed(() => {
         const selected = this.selectedSubjectId();
         if (!selected) return this.distributions();
         return this.distributions().filter((d) => d.subjectId === selected);
     });
 
-    readonly parallels = computed<CatalogueInterface[]>(() => {
+    readonly parallels = computed(() => {
         const parallelsMap = new Map<string, CatalogueInterface>();
         this.filteredDistributions().forEach((dist) => {
             if (dist.parallel && !parallelsMap.has(dist.parallel.id)) {
@@ -69,7 +112,7 @@ export class EnrollmentCapacityStore {
         return Array.from(parallelsMap.values());
     });
 
-    readonly workdays = computed<CatalogueInterface[]>(() => {
+    readonly workdays = computed(() => {
         const workdaysMap = new Map<string, CatalogueInterface>();
         this.filteredDistributions().forEach((dist) => {
             if (dist.workday && !workdaysMap.has(dist.workday.id)) {
@@ -83,31 +126,27 @@ export class EnrollmentCapacityStore {
         return Array.from(workdaysMap.values());
     });
 
-    readonly matrix = computed<RowInterface[]>(() => {
-        this.enrolledCounts();
-        return this.buildEnrollmentMatrix(this.filteredDistributions());
-    });
+    readonly matrix = computed(() =>
+        this.buildEnrollmentMatrix(this.filteredDistributions(), this.enrolledCounts())
+    );
 
-    readonly statistics = computed<EnrollmentCapacityStatistics>(() => {
-        this.enrolledCounts();
-        return this.calculateEnrollmentStatistics(this.filteredDistributions());
-    });
+    readonly statistics = computed(() =>
+        this.calculateEnrollmentStatistics(this.filteredDistributions(), this.enrolledCounts())
+    );
 
-    readonly hasLevelSelected = computed<boolean>(() => !!this.selectedSubjectId());
+    readonly chartData = computed(() =>
+        this.buildEnrollmentChart(this.statistics())
+    );
 
-    readonly chartData = computed<ChartDataInterface>(() => {
-        return this.buildEnrollmentChart(this.statistics());
-    });
+    readonly hasBothFilters = computed(() =>
+        !!this.filterForm().careerId && !!this.filterForm().schoolPeriodId
+    );
 
-    readonly hasBothFilters = computed<boolean>(() => {
-        return !!this.filterForm().careerId && !!this.filterForm().schoolPeriodId;
-    });
+    readonly showDetails = computed(() =>
+        this.hasBothFilters() && !!this.selectedSubjectId()
+    );
 
-    readonly showDetails = computed<boolean>(() => {
-        return this.hasBothFilters() && !!this.selectedSubjectId();
-    });
-
-    readonly hasSelectedLevelDistributions = computed<boolean>(() => {
+    readonly hasSelectedLevelDistributions = computed(() => {
         const subjectId = this.selectedSubjectId();
         if (!subjectId) return false;
         return this.distributions().some((d) => d.subjectId === subjectId);
@@ -118,12 +157,12 @@ export class EnrollmentCapacityStore {
         this.error.set(null);
 
         this.httpService.findCareers().subscribe({
-            next: (data: CatalogueInterface[]) => this.careers.set(data),
+            next: (data) => this.careers.set(data),
             error: () => this.error.set('Error al cargar carreras'),
         });
 
         this.httpService.findSchoolPeriods().subscribe({
-            next: (data: CatalogueInterface[]) => {
+            next: (data) => {
                 this.schoolPeriods.set(data);
                 this.isLoading.set(false);
             },
@@ -134,7 +173,7 @@ export class EnrollmentCapacityStore {
         });
 
         this.httpService.findClassrooms().subscribe({
-            next: (data: ClassroomInterface[]) => this.classrooms.set(data),
+            next: (data) => this.classrooms.set(data),
             error: () => this.error.set('Error al cargar aulas'),
         });
     }
@@ -145,9 +184,8 @@ export class EnrollmentCapacityStore {
             return;
         }
 
-  
         this.httpService.findSubjectsByCareer(careerId).subscribe({
-            next: (data: SubjectInterface[]) => this.subjects.set(data),
+            next: (data) => this.subjects.set(data),
             error: () => this.error.set('Error al cargar materias'),
         });
     }
@@ -162,7 +200,7 @@ export class EnrollmentCapacityStore {
         this.isLoading.set(true);
 
         this.httpService.findAllDistributions(form).subscribe({
-            next: (data: TeacherDistributionInterface[]) => {
+            next: (data) => {
                 this.distributions.set(data);
                 this.loadEnrolledCounts(data);
                 this.isLoading.set(false);
@@ -255,93 +293,85 @@ export class EnrollmentCapacityStore {
             return;
         }
 
-        const ids = distributions.map((dist) => dist.id);
-
-        this.httpService.findEnrolledCounts(ids).subscribe({
-            next: (result) => {
-                const counts = new Map<string, number>();
-                distributions.forEach((dist) => {
-                    counts.set(dist.id, result[dist.id] || 0);
-                });
-                this.enrolledCounts.set(counts);
-            },
-            error: () => {
-                const emptyCounts = new Map<string, number>();
-                distributions.forEach((dist) => emptyCounts.set(dist.id, 0));
-                this.enrolledCounts.set(emptyCounts);
-            },
+        this.httpService.findEnrolledCounts(distributions.map(d => d.id)).subscribe({
+            next: (result) => this.enrolledCounts.set(buildCountsMap(distributions, result)),
+            error: () => this.enrolledCounts.set(buildCountsMap(distributions, {})),
         });
     }
 
     private saveDistribution(): void {
-        const isEditing = this.isEditMode();
-        const filterData = this.filterForm();
-        const modalData = this.modalForm();
-
-        if (isEditing && this.selectedCell()) {
-            const selectedCell = this.selectedCell()!;
-            const payload: UpdateTeacherDistributionPayload = {
-                capacity: modalData.capacity,
-                parallelId: selectedCell.parallelId,
-                workdayId: selectedCell.workdayId,
-                subjectId: selectedCell.subjectId,
-                schoolPeriodId: selectedCell.schoolPeriodId,
-                classroomId: modalData.classroomId || selectedCell.classroomId,
-            };
-
-            this.httpService.update(selectedCell.id, payload).subscribe({
-                next: (updated) => {
-                    this.distributions.update((list) =>
-                        list.map((d) => (d.id === updated.id ? updated : d))
-                    );
-                    this.closeModal();
-                },
-                error: (err: any) => {
-                    this.customMessageService.showError({
-                        summary: 'Error',
-                        detail: err.error?.message || 'No se pudo actualizar la distribución',
-                    });
-                },
-            });
+        if (this.isEditMode()) {
+            this.updateDistribution();
         } else {
-            if (!modalData.subjectId || !modalData.workdayId || !modalData.classroomId) {
+            this.createDistribution();
+        }
+    }
+
+    private updateDistribution(): void {
+        const selectedCell = this.selectedCell();
+        if (!selectedCell) return;
+
+        const payload: UpdateTeacherDistributionPayload = {
+            capacity: this.modalForm().capacity,
+            parallelId: selectedCell.parallelId,
+            workdayId: selectedCell.workdayId,
+            subjectId: selectedCell.subjectId,
+            schoolPeriodId: selectedCell.schoolPeriodId,
+            classroomId: this.modalForm().classroomId || selectedCell.classroomId,
+        };
+
+        this.httpService.update(selectedCell.id, payload).subscribe({
+            next: (updated) => {
+                this.distributions.update(list =>
+                    list.map(d => d.id === updated.id ? updated : d)
+                );
+                this.closeModal();
+            },
+            error: (err: any) => {
                 this.customMessageService.showError({
                     summary: 'Error',
-                    detail: 'Todos los campos son obligatorios',
+                    detail: err.error?.message || 'No se pudo actualizar la distribución',
                 });
-                return;
-            }
+            },
+        });
+    }
 
-            const parallelId = modalData.parallelId ?? (this.parallels()[0]?.id ?? '');
+    private createDistribution(): void {
+        const modalData = this.modalForm();
 
-            const payload: CreateTeacherDistributionPayload = {
-                capacity: modalData.capacity,
-                parallelId,
-                workdayId: modalData.workdayId,
-                subjectId: modalData.subjectId,
-                schoolPeriodId: filterData.schoolPeriodId,
-                classroomId: modalData.classroomId,
-                hours: modalData.hours || 4,
-            };
-
-            this.httpService.register(payload).subscribe({
-                next: (created) => {
-                    this.distributions.update((list) => [...list, created]);
-                    this.enrolledCounts.update((map) => {
-                        const next = new Map(map);
-                        next.set(created.id, 0);
-                        return next;
-                    });
-                    this.closeModal();
-                },
-                error: (err: any) => {
-                    this.customMessageService.showError({
-                        summary: 'Error',
-                        detail: err.error?.message || 'No se pudo crear la distribución',
-                    });
-                },
+        if (!modalData.subjectId || !modalData.workdayId || !modalData.classroomId) {
+            this.customMessageService.showError({
+                summary: 'Error',
+                detail: 'Todos los campos son obligatorios',
             });
+            return;
         }
+
+        const parallelId = modalData.parallelId ?? (this.parallels()[0]?.id ?? '');
+
+        const payload: CreateTeacherDistributionPayload = {
+            capacity: modalData.capacity,
+            parallelId,
+            workdayId: modalData.workdayId,
+            subjectId: modalData.subjectId,
+            schoolPeriodId: this.filterForm().schoolPeriodId,
+            classroomId: modalData.classroomId,
+            hours: modalData.hours || 4,
+        };
+
+        this.httpService.register(payload).subscribe({
+            next: (created) => {
+                this.distributions.update(list => [...list, created]);
+                this.enrolledCounts.update(map => new Map(map).set(created.id, 0));
+                this.closeModal();
+            },
+            error: (err: any) => {
+                this.customMessageService.showError({
+                    summary: 'Error',
+                    detail: err.error?.message || 'No se pudo crear la distribución',
+                });
+            },
+        });
     }
 
     private deleteDistribution(): void {
@@ -350,10 +380,10 @@ export class EnrollmentCapacityStore {
 
         this.httpService.remove(cell.id).subscribe({
             next: () => {
-                this.distributions.update((list) =>
-                    list.filter((d) => d.id !== cell.id)
+                this.distributions.update(list =>
+                    list.filter(d => d.id !== cell.id)
                 );
-                this.enrolledCounts.update((map) => {
+                this.enrolledCounts.update(map => {
                     const next = new Map(map);
                     next.delete(cell.id);
                     return next;
@@ -369,39 +399,18 @@ export class EnrollmentCapacityStore {
         });
     }
 
-    private buildEnrollmentMatrix(distributions: TeacherDistributionInterface[]): RowInterface[] {
+    private buildEnrollmentMatrix(
+        distributions: TeacherDistributionInterface[],
+        counts: Map<string, number>,
+    ): RowInterface[] {
         if (!distributions.length) return [];
 
-        const counts = this.enrolledCounts();
         const workdayMap = new Map<string, BlockInterface>();
 
         distributions.forEach((dist) => {
-            const workdayName = dist.workday?.name || 'Sin Jornada';
-            const parallelName = dist.parallel?.name || 'Sin Paralelo';
-            const subjectName = dist.subject?.name || 'Sin Materia';
-            const academicPeriodName = dist.subject?.academicPeriod?.name || 'Sin Nivel';
-            const capacity = dist.capacity || 0;
+            const workdayName = dist.workday?.name || FALLBACK_WORKDAY;
             const enrolled = counts.get(dist.id) || 0;
-
-            const classroomName = dist.classroom?.name || '';
-            const cell: CellInterface = {
-                id: dist.id,
-                horario: workdayName,
-                paralelo: parallelName,
-                materia: subjectName,
-                subjectId: dist.subjectId,
-                parallelId: dist.parallelId,
-                workdayId: dist.workdayId,
-                schoolPeriodId: dist.schoolPeriodId,
-                classroomId: dist.classroomId,
-                aula: classroomName,
-                nivelAcademico: academicPeriodName,
-                cupoMaximo: capacity,
-                estudiantesContados: enrolled,
-                colorSemaforo: this.calculateColorSemaforo(capacity, enrolled),
-                teacherDistributionId: dist.id,
-            };
-
+            const cell = buildCellFromDistribution(dist, enrolled);
             const workdayId = dist.workdayId || 'unknown';
 
             if (!workdayMap.has(workdayId)) {
@@ -421,71 +430,62 @@ export class EnrollmentCapacityStore {
         }));
     }
 
-    private calculateColorSemaforo(capacity: number, enrolled: number): 'verde' | 'naranja' | 'rojo' {
-        if (capacity === 0) return 'rojo';
-        const percentage = (enrolled / capacity) * 100;
-        if (percentage >= 90) return 'rojo';
-        if (percentage >= 70) return 'naranja';
-        return 'verde';
-    }
-
-    private calculateEnrollmentStatistics(distributions: TeacherDistributionInterface[]): EnrollmentCapacityStatistics {
-        const counts = this.enrolledCounts();
+    private calculateEnrollmentStatistics(
+        distributions: TeacherDistributionInterface[],
+        counts: Map<string, number>,
+    ): EnrollmentCapacityStatistics {
         const totalCapacity = distributions.reduce((sum, d) => sum + (d.capacity || 0), 0);
         const totalEnrolled = distributions.reduce((sum, d) => sum + (counts.get(d.id) || 0), 0);
         const totalAvailable = totalCapacity - totalEnrolled;
-        const globalOccupancyPercentage = totalCapacity > 0 ? (totalEnrolled / totalCapacity) * 100 : 0;
 
         return {
             totalCapacity,
             totalEnrolled,
             totalAvailable,
-            globalOccupancyPercentage,
-            byShift: this.calculateByShift(distributions),
-            byCourse: this.calculateByCourse(distributions),
+            globalOccupancyPercentage: totalCapacity > 0 ? (totalEnrolled / totalCapacity) * 100 : 0,
+            byShift: this.calculateByShift(distributions, counts),
+            byCourse: this.calculateByCourse(distributions, counts),
         };
     }
 
-    private calculateByShift(distributions: TeacherDistributionInterface[]): ShiftStatistics[] {
-        const counts = this.enrolledCounts();
-        const shiftMap = new Map<string, {capacity: number; enrolled: number}>();
+    private aggregateByKey(
+        distributions: TeacherDistributionInterface[],
+        counts: Map<string, number>,
+        keyFn: (d: TeacherDistributionInterface) => string,
+    ): { key: string; capacity: number; enrolled: number; available: number; percentage: number }[] {
+        const map = new Map<string, {capacity: number; enrolled: number}>();
 
         distributions.forEach((dist) => {
-            const shiftName = dist.workday?.name || 'Sin Jornada';
-            const current = shiftMap.get(shiftName) || {capacity: 0, enrolled: 0};
+            const key = keyFn(dist);
+            const current = map.get(key) || {capacity: 0, enrolled: 0};
             current.capacity += dist.capacity || 0;
             current.enrolled += counts.get(dist.id) || 0;
-            shiftMap.set(shiftName, current);
+            map.set(key, current);
         });
 
-        return Array.from(shiftMap.entries()).map(([shiftName, data]) => ({
-            shiftName,
-            capacity: data.capacity,
-            enrolled: data.enrolled,
-            available: data.capacity - data.enrolled,
-            percentage: data.capacity > 0 ? (data.enrolled / data.capacity) * 100 : 0,
+        return Array.from(map.entries()).map(([key, {capacity, enrolled}]) => ({
+            key,
+            capacity,
+            enrolled,
+            available: capacity - enrolled,
+            percentage: capacity > 0 ? (enrolled / capacity) * 100 : 0,
         }));
     }
 
-    private calculateByCourse(distributions: TeacherDistributionInterface[]): CourseStatistics[] {
-        const counts = this.enrolledCounts();
-        const courseMap = new Map<string, {capacity: number; enrolled: number}>();
+    private calculateByShift(
+        distributions: TeacherDistributionInterface[],
+        counts: Map<string, number>,
+    ): ShiftStatistics[] {
+        return this.aggregateByKey(distributions, counts, d => d.workday?.name || FALLBACK_WORKDAY)
+            .map(({key, ...rest}) => ({shiftName: key, ...rest}));
+    }
 
-        distributions.forEach((dist) => {
-            const courseName = dist.subject?.name || 'Sin Materia';
-            const current = courseMap.get(courseName) || {capacity: 0, enrolled: 0};
-            current.capacity += dist.capacity || 0;
-            current.enrolled += counts.get(dist.id) || 0;
-            courseMap.set(courseName, current);
-        });
-
-        return Array.from(courseMap.entries()).map(([courseName, data]) => ({
-            courseName,
-            capacity: data.capacity,
-            enrolled: data.enrolled,
-            available: data.capacity - data.enrolled,
-            percentage: data.capacity > 0 ? (data.enrolled / data.capacity) * 100 : 0,
-        }));
+    private calculateByCourse(
+        distributions: TeacherDistributionInterface[],
+        counts: Map<string, number>,
+    ): CourseStatistics[] {
+        return this.aggregateByKey(distributions, counts, d => d.subject?.name || FALLBACK_SUBJECT)
+            .map(({key, ...rest}) => ({courseName: key, ...rest}));
     }
 
     private buildEnrollmentChart(statistics: EnrollmentCapacityStatistics): ChartDataInterface {
