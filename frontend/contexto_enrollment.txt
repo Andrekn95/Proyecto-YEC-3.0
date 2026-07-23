@@ -1,62 +1,62 @@
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-matrix/capacity-matrix.component.html ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\capacity-matrix\capacity-matrix.component.html ---
 
 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
-    @if (matrix.length === 0) {
+    @if (matrix().length === 0) {
         <div class="flex flex-col items-center justify-center py-12 text-slate-400">
             <i class="pi pi-inbox text-4xl mb-3"></i>
             <p>No hay cupos registrados para este nivel.</p>
         </div>
     } @else {
         <div class="flex flex-col gap-6 min-w-[600px]">
-            @for (jornada of matrix; track jornada.jornadaId) {
+            @for (jornada of matrix(); track jornada.jornadaId) {
                 <div class="flex flex-col gap-2">
                     <div class="flex items-center border-b pb-2">
                         <h4 class="text-md font-bold text-slate-700">{{ jornada.jornadaNombre }}</h4>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
-                        @for (celda of jornada.bloquesHorarios[0].celdas; track celda.id) {
-                            <div
-                                class="relative flex flex-col p-3 rounded-lg border-2 cursor-pointer transition-transform hover:scale-105"
-                                [class.border-green-400]="celda.colorSemaforo === 'verde'"
-                                [class.bg-green-50]="celda.colorSemaforo === 'verde'"
-                                [class.border-orange-400]="celda.colorSemaforo === 'naranja'"
-                                [class.bg-orange-50]="celda.colorSemaforo === 'naranja'"
-                                [class.border-red-400]="celda.colorSemaforo === 'rojo'"
-                                [class.bg-red-50]="celda.colorSemaforo === 'rojo'"
-                                (click)="edit.emit(celda)">
-                                @if (celda.nivelAcademico) {
-                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 opacity-80">
-                                        {{ celda.nivelAcademico }}
-                                    </div>
-                                }
+                    @for (bloque of jornada.bloquesHorarios; track bloque) {
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
+                            @for (celda of bloque.celdas; track celda.id) {
+                                <div
+                                    class="relative flex flex-col p-3 rounded-lg border-2 cursor-pointer transition-transform hover:scale-105"
+                                    [class.border-green-400]="celda.colorSemaforo === 'verde'"
+                                    [class.bg-green-50]="celda.colorSemaforo === 'verde'"
+                                    [class.border-orange-400]="celda.colorSemaforo === 'naranja'"
+                                    [class.bg-orange-50]="celda.colorSemaforo === 'naranja'"
+                                    [class.border-red-400]="celda.colorSemaforo === 'rojo'"
+                                    [class.bg-red-50]="celda.colorSemaforo === 'rojo'"
+                                    (click)="edit.emit(celda)">
+                                    @if (celda.nivelAcademico) {
+                                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 opacity-80">
+                                            {{ celda.nivelAcademico }}
+                                        </div>
+                                    }
 
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="font-black text-lg text-slate-800">{{ celda.aula || 'Sin aula' }}</span>
-                                    <span class="text-xs font-bold px-2 py-1 rounded-full bg-white bg-opacity-60 text-slate-700">
-                                        {{ celda.estudiantesContados }} / {{ celda.cupoMaximo }}
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-black text-lg text-slate-800">{{ celda.aula || 'Sin aula' }}</span>
+                                        <span class="text-xs font-bold px-2 py-1 rounded-full bg-white bg-opacity-60 text-slate-700">
+                                            {{ celda.estudiantesContados }} / {{ celda.cupoMaximo }}
+                                        </span>
+                                    </div>
+
+                                    <span class="text-xs text-slate-500 font-semibold truncate" title="{{ celda.materia }}">
+                                        <i class="pi pi-book mr-1"></i>
+                                        {{ celda.materia }}
                                     </span>
                                 </div>
-
-                                <span class="text-xs text-slate-500 font-semibold truncate" title="{{ celda.materia }}">
-                                    <i class="pi pi-book mr-1"></i>
-                                    {{ celda.materia }}
-                                </span>
-                            </div>
-                        }
-                    </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>
     }
 </div>
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-matrix/capacity-matrix.component.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\capacity-matrix\capacity-matrix.component.ts ---
 
-//Muestra los datos de cupos de matricula, es un componente tonto y solo recibe datos y notifica cuando se quiere editar o crear .
-
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {Component, input, output} from '@angular/core';
 import {ButtonModule} from 'primeng/button';
 import {RowInterface, CellInterface} from '../../enrollment-capacity.state';
 
@@ -66,12 +66,11 @@ import {RowInterface, CellInterface} from '../../enrollment-capacity.state';
     templateUrl: './capacity-matrix.component.html',
 })
 export class CapacityMatrixComponent {
-    @Input({required: true}) matrix!: RowInterface[];
-    @Output() edit = new EventEmitter<CellInterface>();
-    @Output() create = new EventEmitter<void>();
+    readonly matrix = input.required<RowInterface[]>();
+    readonly edit = output<CellInterface>();
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-modal/capacity-modal.component.html ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\capacity-modal\capacity-modal.component.html ---
 
 <p-dialog
     [visible]="visible()"
@@ -104,8 +103,7 @@ export class CapacityMatrixComponent {
                     [options]="workdays()"
                     optionLabel="name"
                     optionValue="id"
-                    [ngModel]="form$().workdayId"
-                    (ngModelChange)="form$.update(f => ({...f, workdayId: $event}))"
+                    [(ngModel)]="formData.workdayId().value"
                     placeholder="Seleccione un horario"
                     appendTo="body"
                     styleClass="w-full">
@@ -129,8 +127,7 @@ export class CapacityMatrixComponent {
                 [options]="classrooms()"
                 optionLabel="name"
                 optionValue="id"
-                [ngModel]="form$().classroomId"
-                (ngModelChange)="form$.update(f => ({...f, classroomId: $event}))"
+                [(ngModel)]="formData.classroomId().value"
                 placeholder="Seleccione un aula"
                 appendTo="body"
                 styleClass="w-full">
@@ -150,10 +147,7 @@ export class CapacityMatrixComponent {
             <p-inputNumber
                 id="capacity"
                 name="capacity"
-                [min]="1"
-                [max]="100"
-                [ngModel]="form$().capacity"
-                (ngModelChange)="form$.update(f => ({...f, capacity: $event}))"
+                [(ngModel)]="formData.capacity().value"
                 styleClass="w-full">
             </p-inputNumber>
 
@@ -195,9 +189,10 @@ export class CapacityMatrixComponent {
         </div>
     </ng-template>
 </p-dialog>
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-modal/capacity-modal.component.ts ---
 
-import {Component, computed, effect, inject, input, OnDestroy, OnInit, signal, untracked, WritableSignal} from '@angular/core';
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\capacity-modal\capacity-modal.component.ts ---
+
+import {Component, computed, effect, inject, input, OnDestroy, OnInit, untracked} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {FieldTree, form} from '@angular/forms/signals';
 import {Dialog} from 'primeng/dialog';
@@ -214,7 +209,6 @@ import {
     ClassroomInterface,
     ModalFormInterface,
     SubjectInterface,
-    INITIAL_MODAL_FORM,
 } from '../../enrollment-capacity.state';
 import {validateModalForm} from './capacity-modal.validation';
 
@@ -243,13 +237,9 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
         return subject?.name ?? '';
     });
 
-    protected readonly form$: WritableSignal<ModalFormInterface> = signal({...INITIAL_MODAL_FORM});
-
     protected readonly formData: FieldTree<ModalFormInterface> = this.buildForm();
 
     constructor() {
-        this.initializeData();
-        this.watchFormChanges();
         this.watchClassroomChanges();
     }
 
@@ -258,7 +248,7 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
             'Formulario de Capacidad',
             FORM_STATE_KEY,
             this.formData,
-            this.form$()
+            this.store.modalForm()
         );
     }
 
@@ -275,33 +265,18 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
         this.store.confirmSave();
     }
 
-    private initializeData(): void {
-        effect(() => {
-            const isVisible = this.visible();
-            if (isVisible) {
-                untracked(() => {
-                    const data = this.store.modalForm();
-                    this.form$.set(data);
-                });
-            }
-        });
-    }
-
-    private watchFormChanges(): void {
-        effect(() => {
-            const data = this.form$();
-            untracked(() => this.store.updateModalForm(data));
-        });
-    }
-
     private watchClassroomChanges(): void {
         effect(() => {
-            const classroomId = this.form$().classroomId;
-            if (classroomId) {
+            const isEditing = this.editMode();
+            const classroomId = this.formData.classroomId().value();
+            if (!isEditing && classroomId) {
                 const classroom = this.classrooms().find(c => c.id === classroomId);
-                if (classroom && classroom.capacity !== this.form$().capacity) {
+                if (classroom) {
                     untracked(() => {
-                        this.form$.update(current => ({...current, capacity: classroom.capacity}));
+                        const currentCapacity = this.formData.capacity().value();
+                        if (classroom.capacity !== currentCapacity) {
+                            this.store.modalForm.update(current => ({...current, capacity: classroom.capacity}));
+                        }
                     });
                 }
             }
@@ -309,19 +284,28 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
     }
 
     private buildForm(): FieldTree<ModalFormInterface> {
-        return form<ModalFormInterface>(this.form$, (schema) => {
+        return form<ModalFormInterface>(this.store.modalForm, (schema) => {
             validateModalForm(schema);
         });
     }
 }
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-modal/capacity-modal.validation.ts ---
 
-import {required, SchemaPathTree} from '@angular/forms/signals';
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\capacity-modal\capacity-modal.validation.ts ---
+
+import {required, min, max, SchemaPathTree} from '@angular/forms/signals';
 import {ModalFormInterface} from '../../enrollment-capacity.state';
 
 export function validateModalForm(schema: SchemaPathTree<ModalFormInterface>): void {
     required(schema.capacity, {
         message: 'La capacidad es requerida',
+    });
+
+    min(schema.capacity, 1, {
+        message: 'La capacidad mínima es 1',
+    });
+
+    max(schema.capacity, 100, {
+        message: 'La capacidad máxima es 100',
     });
 
     required(schema.classroomId, {
@@ -337,7 +321,7 @@ export function validateModalForm(schema: SchemaPathTree<ModalFormInterface>): v
     });
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/enrollment-capacity-list/enrollment-capacity-list.component.html ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\enrollment-capacity-list\enrollment-capacity-list.component.html ---
 
 <div class="flex flex-col gap-6 p-4">
     <p-confirmDialog [style]="{ width: '450px' }" [baseZIndex]="10000"></p-confirmDialog>
@@ -370,8 +354,7 @@ export function validateModalForm(schema: SchemaPathTree<ModalFormInterface>): v
                 <app-capacity-matrix
                     class="col-span-1 lg:col-span-3"
                     [matrix]="store.matrix()"
-                    (edit)="openEditModal($event)"
-                    (create)="openCreateModal()">
+                    (edit)="openEditModal($event)">
                 </app-capacity-matrix>
             </div>
         } @else {
@@ -414,7 +397,7 @@ export function validateModalForm(schema: SchemaPathTree<ModalFormInterface>): v
     </app-capacity-modal>
 </div>
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/enrollment-capacity-list/enrollment-capacity-list.component.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\enrollment-capacity-list\enrollment-capacity-list.component.ts ---
 
 import {Component, effect, inject, OnInit} from '@angular/core';
 import {ConfirmDialog} from 'primeng/confirmdialog';
@@ -484,7 +467,7 @@ export class EnrollmentCapacityListComponent implements OnInit {
     }
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/filter-panel/filter-panel.component.html ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\filter-panel\filter-panel.component.html ---
 
 <div class="custom-form-card">
     <form class="custom-form-grid md:grid-cols-12">
@@ -507,8 +490,7 @@ export class EnrollmentCapacityListComponent implements OnInit {
                 optionLabel="name"
                 optionValue="id"
                 placeholder="Seleccione la carrera"
-                [ngModel]="form$().careerId"
-                (ngModelChange)="onCareerChange($event)"
+                [(ngModel)]="formData.careerId().value"
                 appendTo="body"
                 styleClass="w-full">
             </p-select>
@@ -531,8 +513,7 @@ export class EnrollmentCapacityListComponent implements OnInit {
                 optionLabel="name"
                 optionValue="id"
                 placeholder="Seleccione"
-                [ngModel]="form$().schoolPeriodId"
-                (ngModelChange)="onSchoolPeriodChange($event)"
+                [(ngModel)]="formData.schoolPeriodId().value"
                 appendTo="body"
                 styleClass="w-full">
             </p-select>
@@ -542,11 +523,9 @@ export class EnrollmentCapacityListComponent implements OnInit {
     </form>
 </div>
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/filter-panel/filter-panel.component.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\filter-panel\filter-panel.component.ts ---
 
-//Aqui se renderiza el panel de filtros de la sección de carrera
-
-import {Component, effect, inject, OnDestroy, OnInit, signal, WritableSignal} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {FieldTree, form} from '@angular/forms/signals';
 import {FormsModule} from '@angular/forms';
 import {Select} from 'primeng/select';
@@ -554,7 +533,7 @@ import {LabelDirective} from '@utils/directives/label.directive';
 import {ErrorMessageDirective} from '@utils/directives/error-message.directive';
 import {FormRegistryService} from '@utils/services/form-registry.service';
 import {EnrollmentCapacityStore} from '../../enrollment-capacity.store';
-import {FilterFormInterface, INITIAL_FILTER_FORM} from '../../enrollment-capacity.state';
+import {FilterFormInterface} from '../../enrollment-capacity.state';
 import {validateFilterForm} from './filter-panel.validation';
 
 const FORM_STATE_KEY = 'filterForm';
@@ -568,21 +547,14 @@ export class FilterPanelComponent implements OnInit, OnDestroy {
     private readonly formRegistryService = inject(FormRegistryService);
     protected readonly store = inject(EnrollmentCapacityStore);
 
-    protected readonly form$: WritableSignal<FilterFormInterface> = signal({...this.store.filterForm()});
     protected readonly formData: FieldTree<FilterFormInterface> = this.buildForm();
-    private formInitialized: boolean = false;
-
-    constructor() {
-        this.initializeData();
-        this.watchFormChanges();
-    }
 
     ngOnInit(): void {
         this.formRegistryService.register(
             'Filtros de Capacidad',
             FORM_STATE_KEY,
             this.formData,
-            this.form$()
+            this.store.filterForm()
         );
     }
 
@@ -590,39 +562,14 @@ export class FilterPanelComponent implements OnInit, OnDestroy {
         this.formRegistryService.unregister(FORM_STATE_KEY);
     }
 
-    protected onCareerChange(value: string): void {
-        this.form$.update(current => ({...current, careerId: value}));
-    }
-
-    protected onSchoolPeriodChange(value: string): void {
-        this.form$.update(current => ({...current, schoolPeriodId: value}));
-    }
-
-    private initializeData(): void {
-        effect(() => {
-            const data = this.store.filterForm();
-
-            if (!this.formInitialized) {
-                this.form$.set(data);
-                this.formInitialized = true;
-            }
-        });
-    }
-
-    private watchFormChanges(): void {
-        effect(() => {
-            this.store.updateFilterForm(this.form$());
-        });
-    }
-
     private buildForm(): FieldTree<FilterFormInterface> {
-        return form<FilterFormInterface>(this.form$, (schema) => {
+        return form<FilterFormInterface>(this.store.filterForm, (schema) => {
             validateFilterForm(schema);
         });
     }
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/filter-panel/filter-panel.validation.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\filter-panel\filter-panel.validation.ts ---
 
 import {required, SchemaPathTree} from '@angular/forms/signals';
 import {FilterFormInterface} from '../../enrollment-capacity.state';
@@ -633,7 +580,7 @@ export function validateFilterForm(schema: SchemaPathTree<FilterFormInterface>):
     });
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/level-cards/level-cards.component.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\level-cards\level-cards.component.ts ---
 
 import {Component, inject} from '@angular/core';
 import {EnrollmentCapacityStore} from '../../enrollment-capacity.store';
@@ -688,7 +635,7 @@ export class LevelCardsComponent {
     }
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/statistics-panel/statistics-panel.component.html ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\statistics-panel\statistics-panel.component.html ---
 
 <!-- components/statistics-panel/statistics-panel.component.html -->
 
@@ -729,7 +676,8 @@ export class LevelCardsComponent {
     </div>
   </div>
 </div>
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/statistics-panel/statistics-panel.component.ts ---
+
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\components\statistics-panel\statistics-panel.component.ts ---
 
 //Muestra totales (cupos, paralelos, etc.) según los filtros.
 import {Component, input, Input} from '@angular/core';
@@ -751,7 +699,7 @@ export class StatisticsPanelComponent {
  statistics=input.required<EnrollmentCapacityStatistics>();
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/enrollment-capacity.service.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\enrollment-capacity.service.ts ---
 
 import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
@@ -882,7 +830,7 @@ export class EnrollmentCapacityHttpService {
     }
 }
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/enrollment-capacity.state.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\enrollment-capacity.state.ts ---
 
 import {CatalogueInterface} from '@utils/interfaces';
 
@@ -1111,7 +1059,7 @@ export const DEFAULT_CHART_OPTIONS: ChartOptionsInterface = {
     },
 };
 
---- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/enrollment-capacity.store.ts ---
+--- ARCHIVO: C:\Users\darkn\OneDrive\Desktop\Instituto\Projecto Final\Proyecto YEC\Proyecto-YEC-2.0-main\Titulacion-main\frontend\src\app\pages\admin\work-flows\enrollment-capacity\enrollment-capacity.store.ts ---
 
 import {computed, inject, Injectable, signal} from '@angular/core';
 import {EnrollmentCapacityHttpService} from './enrollment-capacity.service';
@@ -1227,14 +1175,6 @@ export class EnrollmentCapacityStore {
         if (!subjectId) return false;
         return this.distributions().some((d) => d.subjectId === subjectId);
     });
-
-    updateFilterForm(update: Partial<FilterFormInterface>): void {
-        this.filterForm.update((current) => ({...current, ...update}));
-    }
-
-    updateModalForm(update: Partial<ModalFormInterface>): void {
-        this.modalForm.update((current) => ({...current, ...update}));
-    }
 
     loadInitialData(): void {
         this.isLoading.set(true);

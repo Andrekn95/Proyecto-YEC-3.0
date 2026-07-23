@@ -73,12 +73,16 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
 
     private watchClassroomChanges(): void {
         effect(() => {
+            const isEditing = this.editMode();
             const classroomId = this.formData.classroomId().value();
-            if (classroomId) {
+            if (!isEditing && classroomId) {
                 const classroom = this.classrooms().find(c => c.id === classroomId);
-                if (classroom && classroom.capacity !== this.formData.capacity().value()) {
+                if (classroom) {
                     untracked(() => {
-                        this.store.modalForm.update(current => ({...current, capacity: classroom.capacity}));
+                        const currentCapacity = this.formData.capacity().value();
+                        if (classroom.capacity !== currentCapacity) {
+                            this.store.modalForm.update(current => ({...current, capacity: classroom.capacity}));
+                        }
                     });
                 }
             }
