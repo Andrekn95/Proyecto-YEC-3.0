@@ -80,8 +80,10 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
         effect(() => {
             const isVisible = this.visible();
             if (isVisible) {
-                const data = this.store.modalForm();
-                this.form$.set(data);
+                untracked(() => {
+                    const data = this.store.modalForm();
+                    this.form$.set(data);
+                });
             }
         });
     }
