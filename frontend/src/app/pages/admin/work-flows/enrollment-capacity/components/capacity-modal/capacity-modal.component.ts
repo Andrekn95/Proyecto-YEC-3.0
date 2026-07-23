@@ -1,4 +1,4 @@
-import {Component, computed, effect, inject, input, OnDestroy, OnInit, signal, untracked, WritableSignal} from '@angular/core';
+import {Component, computed, effect, inject, input, OnDestroy, OnInit, untracked} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {FieldTree, form} from '@angular/forms/signals';
 import {Dialog} from 'primeng/dialog';
@@ -15,7 +15,6 @@ import {
     ClassroomInterface,
     ModalFormInterface,
     SubjectInterface,
-    INITIAL_MODAL_FORM,
 } from '../../enrollment-capacity.state';
 import {validateModalForm} from './capacity-modal.validation';
 
@@ -44,13 +43,9 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
         return subject?.name ?? '';
     });
 
-    protected readonly form$: WritableSignal<ModalFormInterface> = signal({...INITIAL_MODAL_FORM});
-
     protected readonly formData: FieldTree<ModalFormInterface> = this.buildForm();
 
     constructor() {
-        this.initializeData();
-        this.watchFormChanges();
         this.watchClassroomChanges();
     }
 
@@ -59,7 +54,7 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
             'Formulario de Capacidad',
             FORM_STATE_KEY,
             this.formData,
-            this.form$()
+            this.store.modalForm()
         );
     }
 
@@ -76,33 +71,14 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
         this.store.confirmSave();
     }
 
-    private initializeData(): void {
-        effect(() => {
-            const isVisible = this.visible();
-            if (isVisible) {
-                untracked(() => {
-                    const data = this.store.modalForm();
-                    this.form$.set(data);
-                });
-            }
-        });
-    }
-
-    private watchFormChanges(): void {
-        effect(() => {
-            const data = this.form$();
-            untracked(() => this.store.updateModalForm(data));
-        });
-    }
-
     private watchClassroomChanges(): void {
         effect(() => {
-            const classroomId = this.form$().classroomId;
+            const classroomId = this.formData.classroomId().value();
             if (classroomId) {
                 const classroom = this.classrooms().find(c => c.id === classroomId);
-                if (classroom && classroom.capacity !== this.form$().capacity) {
+                if (classroom && classroom.capacity !== this.formData.capacity().value()) {
                     untracked(() => {
-                        this.form$.update(current => ({...current, capacity: classroom.capacity}));
+                        this.store.modalForm.update(current => ({...current, capacity: classroom.capacity}));
                     });
                 }
             }
@@ -110,7 +86,7 @@ export class CapacityModalComponent implements OnInit, OnDestroy {
     }
 
     private buildForm(): FieldTree<ModalFormInterface> {
-        return form<ModalFormInterface>(this.form$, (schema) => {
+        return form<ModalFormInterface>(this.store.modalForm, (schema) => {
             validateModalForm(schema);
         });
     }

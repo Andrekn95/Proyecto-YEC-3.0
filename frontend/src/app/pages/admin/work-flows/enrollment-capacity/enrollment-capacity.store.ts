@@ -113,14 +113,6 @@ export class EnrollmentCapacityStore {
         return this.distributions().some((d) => d.subjectId === subjectId);
     });
 
-    updateFilterForm(update: Partial<FilterFormInterface>): void {
-        this.filterForm.update((current) => ({...current, ...update}));
-    }
-
-    updateModalForm(update: Partial<ModalFormInterface>): void {
-        this.modalForm.update((current) => ({...current, ...update}));
-    }
-
     loadInitialData(): void {
         this.isLoading.set(true);
         this.error.set(null);

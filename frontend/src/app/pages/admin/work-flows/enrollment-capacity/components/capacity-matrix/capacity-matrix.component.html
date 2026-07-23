@@ -1,48 +1,50 @@
 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
-    @if (matrix.length === 0) {
+    @if (matrix().length === 0) {
         <div class="flex flex-col items-center justify-center py-12 text-slate-400">
             <i class="pi pi-inbox text-4xl mb-3"></i>
             <p>No hay cupos registrados para este nivel.</p>
         </div>
     } @else {
         <div class="flex flex-col gap-6 min-w-[600px]">
-            @for (jornada of matrix; track jornada.jornadaId) {
+            @for (jornada of matrix(); track jornada.jornadaId) {
                 <div class="flex flex-col gap-2">
                     <div class="flex items-center border-b pb-2">
                         <h4 class="text-md font-bold text-slate-700">{{ jornada.jornadaNombre }}</h4>
                     </div>
 
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
-                        @for (celda of jornada.bloquesHorarios[0].celdas; track celda.id) {
-                            <div
-                                class="relative flex flex-col p-3 rounded-lg border-2 cursor-pointer transition-transform hover:scale-105"
-                                [class.border-green-400]="celda.colorSemaforo === 'verde'"
-                                [class.bg-green-50]="celda.colorSemaforo === 'verde'"
-                                [class.border-orange-400]="celda.colorSemaforo === 'naranja'"
-                                [class.bg-orange-50]="celda.colorSemaforo === 'naranja'"
-                                [class.border-red-400]="celda.colorSemaforo === 'rojo'"
-                                [class.bg-red-50]="celda.colorSemaforo === 'rojo'"
-                                (click)="edit.emit(celda)">
-                                @if (celda.nivelAcademico) {
-                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 opacity-80">
-                                        {{ celda.nivelAcademico }}
-                                    </div>
-                                }
+                    @for (bloque of jornada.bloquesHorarios; track bloque) {
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
+                            @for (celda of bloque.celdas; track celda.id) {
+                                <div
+                                    class="relative flex flex-col p-3 rounded-lg border-2 cursor-pointer transition-transform hover:scale-105"
+                                    [class.border-green-400]="celda.colorSemaforo === 'verde'"
+                                    [class.bg-green-50]="celda.colorSemaforo === 'verde'"
+                                    [class.border-orange-400]="celda.colorSemaforo === 'naranja'"
+                                    [class.bg-orange-50]="celda.colorSemaforo === 'naranja'"
+                                    [class.border-red-400]="celda.colorSemaforo === 'rojo'"
+                                    [class.bg-red-50]="celda.colorSemaforo === 'rojo'"
+                                    (click)="edit.emit(celda)">
+                                    @if (celda.nivelAcademico) {
+                                        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 opacity-80">
+                                            {{ celda.nivelAcademico }}
+                                        </div>
+                                    }
 
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="font-black text-lg text-slate-800">{{ celda.aula || 'Sin aula' }}</span>
-                                    <span class="text-xs font-bold px-2 py-1 rounded-full bg-white bg-opacity-60 text-slate-700">
-                                        {{ celda.estudiantesContados }} / {{ celda.cupoMaximo }}
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-black text-lg text-slate-800">{{ celda.aula || 'Sin aula' }}</span>
+                                        <span class="text-xs font-bold px-2 py-1 rounded-full bg-white bg-opacity-60 text-slate-700">
+                                            {{ celda.estudiantesContados }} / {{ celda.cupoMaximo }}
+                                        </span>
+                                    </div>
+
+                                    <span class="text-xs text-slate-500 font-semibold truncate" title="{{ celda.materia }}">
+                                        <i class="pi pi-book mr-1"></i>
+                                        {{ celda.materia }}
                                     </span>
                                 </div>
-
-                                <span class="text-xs text-slate-500 font-semibold truncate" title="{{ celda.materia }}">
-                                    <i class="pi pi-book mr-1"></i>
-                                    {{ celda.materia }}
-                                </span>
-                            </div>
-                        }
-                    </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>

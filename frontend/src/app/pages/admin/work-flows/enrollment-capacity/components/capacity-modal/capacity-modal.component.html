@@ -29,8 +29,7 @@
                     [options]="workdays()"
                     optionLabel="name"
                     optionValue="id"
-                    [ngModel]="form$().workdayId"
-                    (ngModelChange)="form$.update(f => ({...f, workdayId: $event}))"
+                    [(ngModel)]="formData.workdayId().value"
                     placeholder="Seleccione un horario"
                     appendTo="body"
                     styleClass="w-full">
@@ -54,8 +53,7 @@
                 [options]="classrooms()"
                 optionLabel="name"
                 optionValue="id"
-                [ngModel]="form$().classroomId"
-                (ngModelChange)="form$.update(f => ({...f, classroomId: $event}))"
+                [(ngModel)]="formData.classroomId().value"
                 placeholder="Seleccione un aula"
                 appendTo="body"
                 styleClass="w-full">
@@ -75,10 +73,7 @@
             <p-inputNumber
                 id="capacity"
                 name="capacity"
-                [min]="1"
-                [max]="100"
-                [ngModel]="form$().capacity"
-                (ngModelChange)="form$.update(f => ({...f, capacity: $event}))"
+                [(ngModel)]="formData.capacity().value"
                 styleClass="w-full">
             </p-inputNumber>
 

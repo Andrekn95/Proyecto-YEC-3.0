@@ -1,0 +1,1626 @@
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-matrix/capacity-matrix.component.html ---
+
+<div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 overflow-x-auto">
+    @if (matrix.length === 0) {
+        <div class="flex flex-col items-center justify-center py-12 text-slate-400">
+            <i class="pi pi-inbox text-4xl mb-3"></i>
+            <p>No hay cupos registrados para este nivel.</p>
+        </div>
+    } @else {
+        <div class="flex flex-col gap-6 min-w-[600px]">
+            @for (jornada of matrix; track jornada.jornadaId) {
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center border-b pb-2">
+                        <h4 class="text-md font-bold text-slate-700">{{ jornada.jornadaNombre }}</h4>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-2">
+                        @for (celda of jornada.bloquesHorarios[0].celdas; track celda.id) {
+                            <div
+                                class="relative flex flex-col p-3 rounded-lg border-2 cursor-pointer transition-transform hover:scale-105"
+                                [class.border-green-400]="celda.colorSemaforo === 'verde'"
+                                [class.bg-green-50]="celda.colorSemaforo === 'verde'"
+                                [class.border-orange-400]="celda.colorSemaforo === 'naranja'"
+                                [class.bg-orange-50]="celda.colorSemaforo === 'naranja'"
+                                [class.border-red-400]="celda.colorSemaforo === 'rojo'"
+                                [class.bg-red-50]="celda.colorSemaforo === 'rojo'"
+                                (click)="edit.emit(celda)">
+                                @if (celda.nivelAcademico) {
+                                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2 opacity-80">
+                                        {{ celda.nivelAcademico }}
+                                    </div>
+                                }
+
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="font-black text-lg text-slate-800">{{ celda.aula || 'Sin aula' }}</span>
+                                    <span class="text-xs font-bold px-2 py-1 rounded-full bg-white bg-opacity-60 text-slate-700">
+                                        {{ celda.estudiantesContados }} / {{ celda.cupoMaximo }}
+                                    </span>
+                                </div>
+
+                                <span class="text-xs text-slate-500 font-semibold truncate" title="{{ celda.materia }}">
+                                    <i class="pi pi-book mr-1"></i>
+                                    {{ celda.materia }}
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-matrix/capacity-matrix.component.ts ---
+
+//Muestra los datos de cupos de matricula, es un componente tonto y solo recibe datos y notifica cuando se quiere editar o crear .
+
+import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {ButtonModule} from 'primeng/button';
+import {RowInterface, CellInterface} from '../../enrollment-capacity.state';
+
+@Component({
+    selector: 'app-capacity-matrix',
+    imports: [ButtonModule],
+    templateUrl: './capacity-matrix.component.html',
+})
+export class CapacityMatrixComponent {
+    @Input({required: true}) matrix!: RowInterface[];
+    @Output() edit = new EventEmitter<CellInterface>();
+    @Output() create = new EventEmitter<void>();
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-modal/capacity-modal.component.html ---
+
+<p-dialog
+    [visible]="visible()"
+    [header]="editMode() ? 'Editar Cupo de Matrícula' : 'Crear Nuevo Cupo'"
+    [modal]="true"
+    [style]="{ width: '450px' }"
+    (onHide)="store.closeModal()">
+
+    <div class="flex flex-col gap-4 mt-2">
+        @if (!editMode()) {
+            <div class="custom-form-field">
+                <label class="text-sm font-medium text-slate-700 mb-1 block">Nivel Académico</label>
+                <div class="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <i class="pi pi-book text-blue-500 text-lg"></i>
+                    <span class="font-semibold text-blue-700 text-base">{{ selectedLevelName() }}</span>
+                </div>
+            </div>
+
+            <div class="custom-form-field">
+                <label
+                    appLabel
+                    for="workdayId"
+                    label="Horario"
+                    [field]="formData.workdayId">
+                </label>
+
+              <p-select
+                    id="workdayId"
+                    name="workdayId"
+                    [options]="workdays()"
+                    optionLabel="name"
+                    optionValue="id"
+                    [ngModel]="form$().workdayId"
+                    (ngModelChange)="form$.update(f => ({...f, workdayId: $event}))"
+                    placeholder="Seleccione un horario"
+                    appendTo="body"
+                    styleClass="w-full">
+                </p-select>
+
+                <small [appErrorMessage]="$any(formData.workdayId)"></small>
+            </div>
+        }
+
+        <div class="custom-form-field">
+            <label
+                appLabel
+                for="classroomId"
+                label="Aula"
+                [field]="formData.classroomId">
+            </label>
+
+            <p-select
+                id="classroomId"
+                name="classroomId"
+                [options]="classrooms()"
+                optionLabel="name"
+                optionValue="id"
+                [ngModel]="form$().classroomId"
+                (ngModelChange)="form$.update(f => ({...f, classroomId: $event}))"
+                placeholder="Seleccione un aula"
+                appendTo="body"
+                styleClass="w-full">
+            </p-select>
+
+            <small [appErrorMessage]="$any(formData.classroomId)"></small>
+        </div>
+
+        <div class="custom-form-field">
+            <label
+                appLabel
+                for="capacity"
+                label="Capacidad Máxima"
+                [field]="formData.capacity">
+            </label>
+
+            <p-inputNumber
+                id="capacity"
+                name="capacity"
+                [min]="1"
+                [max]="100"
+                [ngModel]="form$().capacity"
+                (ngModelChange)="form$.update(f => ({...f, capacity: $event}))"
+                styleClass="w-full">
+            </p-inputNumber>
+
+            <small [appErrorMessage]="$any(formData.capacity)"></small>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="flex justify-between items-center w-full">
+            @if (editMode()) {
+                <button
+                    pButton
+                    type="button"
+                    severity="danger"
+                    icon="pi pi-trash"
+                    label="Eliminar"
+                    (click)="store.confirmDelete()">
+                </button>
+            }
+
+            <div class="flex gap-2 ml-auto">
+                <button
+                    pButton
+                    type="button"
+                    severity="secondary"
+                    icon="pi pi-times"
+                    label="Cancelar"
+                    (click)="store.closeModal()">
+                </button>
+
+                <button
+                    pButton
+                    type="button"
+                    icon="pi pi-check"
+                    [label]="editMode() ? 'Actualizar' : 'Guardar'"
+                    (click)="onSaveClick()">
+                </button>
+            </div>
+        </div>
+    </ng-template>
+</p-dialog>
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-modal/capacity-modal.component.ts ---
+
+import {Component, computed, effect, inject, input, OnDestroy, OnInit, signal, untracked, WritableSignal} from '@angular/core';
+import {FormsModule} from '@angular/forms';
+import {FieldTree, form} from '@angular/forms/signals';
+import {Dialog} from 'primeng/dialog';
+import {Select} from 'primeng/select';
+import {ButtonModule} from 'primeng/button';
+import {InputNumber} from 'primeng/inputnumber';
+import {LabelDirective} from '@utils/directives/label.directive';
+import {ErrorMessageDirective} from '@utils/directives/error-message.directive';
+import {FormRegistryService} from '@utils/services/form-registry.service';
+import {CustomMessageService} from '@utils/services';
+import {EnrollmentCapacityStore} from '../../enrollment-capacity.store';
+import {
+    CatalogueInterface,
+    ClassroomInterface,
+    ModalFormInterface,
+    SubjectInterface,
+    INITIAL_MODAL_FORM,
+} from '../../enrollment-capacity.state';
+import {validateModalForm} from './capacity-modal.validation';
+
+const FORM_STATE_KEY = 'modalForm';
+
+@Component({
+    selector: 'app-capacity-modal',
+    imports: [FormsModule, Dialog, Select, ButtonModule, InputNumber, LabelDirective, ErrorMessageDirective],
+    templateUrl: './capacity-modal.component.html',
+})
+export class CapacityModalComponent implements OnInit, OnDestroy {
+    private readonly formRegistryService = inject(FormRegistryService);
+    private readonly customMessageService = inject(CustomMessageService);
+    protected readonly store = inject(EnrollmentCapacityStore);
+
+    readonly visible = input.required<boolean>();
+    readonly editMode = input.required<boolean>();
+    readonly workdays = input.required<CatalogueInterface[]>();
+    readonly classrooms = input.required<ClassroomInterface[]>();
+    readonly subjects = input.required<SubjectInterface[]>();
+
+    protected readonly selectedLevelName = computed(() => {
+        const id = this.store.selectedSubjectId();
+        if (!id) return '';
+        const subject = this.subjects().find((s) => s.id === id);
+        return subject?.name ?? '';
+    });
+
+    protected readonly form$: WritableSignal<ModalFormInterface> = signal({...INITIAL_MODAL_FORM});
+
+    protected readonly formData: FieldTree<ModalFormInterface> = this.buildForm();
+
+    constructor() {
+        this.initializeData();
+        this.watchFormChanges();
+        this.watchClassroomChanges();
+    }
+
+    ngOnInit(): void {
+        this.formRegistryService.register(
+            'Formulario de Capacidad',
+            FORM_STATE_KEY,
+            this.formData,
+            this.form$()
+        );
+    }
+
+    ngOnDestroy(): void {
+        this.formRegistryService.unregister(FORM_STATE_KEY);
+    }
+
+    protected onSaveClick(): void {
+        if (!this.editMode() && this.formRegistryService.hasErrors()) {
+            this.customMessageService.showFormErrors(this.formRegistryService.errors());
+            return;
+        }
+
+        this.store.confirmSave();
+    }
+
+    private initializeData(): void {
+        effect(() => {
+            const isVisible = this.visible();
+            if (isVisible) {
+                untracked(() => {
+                    const data = this.store.modalForm();
+                    this.form$.set(data);
+                });
+            }
+        });
+    }
+
+    private watchFormChanges(): void {
+        effect(() => {
+            const data = this.form$();
+            untracked(() => this.store.updateModalForm(data));
+        });
+    }
+
+    private watchClassroomChanges(): void {
+        effect(() => {
+            const classroomId = this.form$().classroomId;
+            if (classroomId) {
+                const classroom = this.classrooms().find(c => c.id === classroomId);
+                if (classroom && classroom.capacity !== this.form$().capacity) {
+                    untracked(() => {
+                        this.form$.update(current => ({...current, capacity: classroom.capacity}));
+                    });
+                }
+            }
+        });
+    }
+
+    private buildForm(): FieldTree<ModalFormInterface> {
+        return form<ModalFormInterface>(this.form$, (schema) => {
+            validateModalForm(schema);
+        });
+    }
+}
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/capacity-modal/capacity-modal.validation.ts ---
+
+import {required, SchemaPathTree} from '@angular/forms/signals';
+import {ModalFormInterface} from '../../enrollment-capacity.state';
+
+export function validateModalForm(schema: SchemaPathTree<ModalFormInterface>): void {
+    required(schema.capacity, {
+        message: 'La capacidad es requerida',
+    });
+
+    required(schema.classroomId, {
+        message: 'El aula es requerida',
+    });
+
+    required(schema.workdayId, {
+        message: 'La jornada es requerida',
+    });
+
+    required(schema.subjectId, {
+        message: 'La materia es requerida',
+    });
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/enrollment-capacity-list/enrollment-capacity-list.component.html ---
+
+<div class="flex flex-col gap-6 p-4">
+    <p-confirmDialog [style]="{ width: '450px' }" [baseZIndex]="10000"></p-confirmDialog>
+
+    <app-filter-panel></app-filter-panel>
+
+    @if (store.hasBothFilters()) {
+        <app-level-cards></app-level-cards>
+    }
+
+    @if (store.showDetails()) {
+        <div class="flex justify-end">
+            <button
+                pButton
+                type="button"
+                icon="pi pi-plus"
+                label="Agregar Nuevo Cupo"
+                (click)="openCreateModal()">
+            </button>
+        </div>
+
+        @if (store.hasSelectedLevelDistributions()) {
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <app-statistics-panel
+                    [chartData]="store.chartData()"
+                    [chartOptions]="store.chartOptions()"
+                    [statistics]="store.statistics()">
+                </app-statistics-panel>
+
+                <app-capacity-matrix
+                    class="col-span-1 lg:col-span-3"
+                    [matrix]="store.matrix()"
+                    (edit)="openEditModal($event)"
+                    (create)="openCreateModal()">
+                </app-capacity-matrix>
+            </div>
+        } @else {
+            <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+                <i class="pi pi-inbox text-5xl text-slate-300 mb-4"></i>
+                <h3 class="text-lg font-bold text-slate-600">Sin cupos registrados</h3>
+                <p class="text-slate-500 max-w-md mt-2">
+                    Este nivel académico aún no tiene cupos registrados. Presione el botón <strong>"Agregar Nuevo Cupo"</strong> para crear el primer cupo.
+                </p>
+            </div>
+        }
+    }
+
+    @if (!store.hasBothFilters()) {
+        <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <i class="pi pi-filter text-5xl text-slate-300 mb-4"></i>
+            <h3 class="text-lg font-bold text-slate-600">Seleccione los filtros principales</h3>
+            <p class="text-slate-500 max-w-md mt-2">
+                Debe seleccionar una Carrera y un Período Escolar para visualizar la matriz de cupos y las estadísticas.
+            </p>
+        </div>
+    }
+
+    @if (store.hasBothFilters() && !store.showDetails()) {
+        <div class="bg-white p-12 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center justify-center text-center">
+            <i class="pi pi-arrow-up text-5xl text-slate-300 mb-4"></i>
+            <h3 class="text-lg font-bold text-slate-600">Seleccione un nivel académico</h3>
+            <p class="text-slate-500 max-w-md mt-2">
+                Elija uno de los niveles académicos disponibles para ver sus estadísticas y gestionar los cupos.
+            </p>
+        </div>
+    }
+
+    <app-capacity-modal
+        [visible]="store.modalVisible()"
+        [editMode]="store.isEditMode()"
+        [workdays]="store.workdays()"
+        [classrooms]="store.classrooms()"
+        [subjects]="store.subjects()">
+    </app-capacity-modal>
+</div>
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/enrollment-capacity-list/enrollment-capacity-list.component.ts ---
+
+import {Component, effect, inject, OnInit} from '@angular/core';
+import {ConfirmDialog} from 'primeng/confirmdialog';
+import {ButtonModule} from 'primeng/button';
+import {FilterPanelComponent} from '../filter-panel/filter-panel.component';
+import {StatisticsPanelComponent} from '../statistics-panel/statistics-panel.component';
+import {CapacityMatrixComponent} from '../capacity-matrix/capacity-matrix.component';
+import {CapacityModalComponent} from '../capacity-modal/capacity-modal.component';
+import {LevelCardsComponent} from '../level-cards/level-cards.component';
+import {EnrollmentCapacityStore} from '../../enrollment-capacity.store';
+import {CellInterface} from '../../enrollment-capacity.state';
+import {BreadcrumbService} from '@layout/service/breadcrumb.service';
+import {MY_ROUTES} from '@routes';
+
+@Component({
+    selector: 'app-enrollment-capacity-list',
+    imports: [
+        ConfirmDialog,
+        ButtonModule,
+        FilterPanelComponent,
+        StatisticsPanelComponent,
+        CapacityMatrixComponent,
+        CapacityModalComponent,
+        LevelCardsComponent,
+    ],
+    templateUrl: './enrollment-capacity-list.component.html',
+})
+export class EnrollmentCapacityListComponent implements OnInit {
+    private readonly breadcrumbService = inject(BreadcrumbService);
+    protected readonly store = inject(EnrollmentCapacityStore);
+
+    constructor() {
+        this.breadcrumbService.setItems([
+            {
+                label: 'Capacidad de Matrícula',
+                routerLink: MY_ROUTES.adminPages.enrollmentCapacity.absolute,
+            },
+        ]);
+
+        this.watchFilterChanges();
+    }
+
+    ngOnInit(): void {
+        this.store.loadInitialData();
+    }
+
+    protected openCreateModal(): void {
+        this.store.openCreateModal(this.store.selectedSubjectId() ?? undefined);
+    }
+
+    protected openEditModal(cell: CellInterface): void {
+        this.store.openEditModal(cell);
+    }
+
+    private watchFilterChanges(): void {
+        effect(() => {
+            const filters = this.store.filterForm();
+
+            if (filters.careerId) {
+                this.store.loadSubjectsByCareer(filters.careerId);
+            }
+
+            if (filters.schoolPeriodId) {
+                this.store.loadDistributions({ schoolPeriodId: filters.schoolPeriodId });
+            }
+        });
+    }
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/filter-panel/filter-panel.component.html ---
+
+<div class="custom-form-card">
+    <form class="custom-form-grid md:grid-cols-12">
+        <div class="custom-form-section md:col-span-12">
+            <h4>Gestión de Capacidad de Matrícula</h4>
+        </div>
+
+        <div class="custom-form-field md:col-span-6">
+            <label
+                appLabel
+                for="careerId"
+                label="Carrera"
+                [field]="formData.careerId">
+            </label>
+
+            <p-select
+                id="careerId"
+                name="careerId"
+                [options]="store.careers()"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Seleccione la carrera"
+                [ngModel]="form$().careerId"
+                (ngModelChange)="onCareerChange($event)"
+                appendTo="body"
+                styleClass="w-full">
+            </p-select>
+
+            <small [appErrorMessage]="$any(formData.careerId)"></small>
+        </div>
+
+        <div class="custom-form-field md:col-span-6">
+            <label
+                appLabel
+                for="schoolPeriodId"
+                label="Período Escolar"
+                [field]="formData.schoolPeriodId">
+            </label>
+
+            <p-select
+                id="schoolPeriodId"
+                name="schoolPeriodId"
+                [options]="store.schoolPeriods()"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Seleccione"
+                [ngModel]="form$().schoolPeriodId"
+                (ngModelChange)="onSchoolPeriodChange($event)"
+                appendTo="body"
+                styleClass="w-full">
+            </p-select>
+
+            <small [appErrorMessage]="$any(formData.schoolPeriodId)"></small>
+        </div>
+    </form>
+</div>
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/filter-panel/filter-panel.component.ts ---
+
+//Aqui se renderiza el panel de filtros de la sección de carrera
+
+import {Component, effect, inject, OnDestroy, OnInit, signal, WritableSignal} from '@angular/core';
+import {FieldTree, form} from '@angular/forms/signals';
+import {FormsModule} from '@angular/forms';
+import {Select} from 'primeng/select';
+import {LabelDirective} from '@utils/directives/label.directive';
+import {ErrorMessageDirective} from '@utils/directives/error-message.directive';
+import {FormRegistryService} from '@utils/services/form-registry.service';
+import {EnrollmentCapacityStore} from '../../enrollment-capacity.store';
+import {FilterFormInterface, INITIAL_FILTER_FORM} from '../../enrollment-capacity.state';
+import {validateFilterForm} from './filter-panel.validation';
+
+const FORM_STATE_KEY = 'filterForm';
+
+@Component({
+    selector: 'app-filter-panel',
+    imports: [FormsModule, Select, LabelDirective, ErrorMessageDirective],
+    templateUrl: './filter-panel.component.html',
+})
+export class FilterPanelComponent implements OnInit, OnDestroy {
+    private readonly formRegistryService = inject(FormRegistryService);
+    protected readonly store = inject(EnrollmentCapacityStore);
+
+    protected readonly form$: WritableSignal<FilterFormInterface> = signal({...this.store.filterForm()});
+    protected readonly formData: FieldTree<FilterFormInterface> = this.buildForm();
+    private formInitialized: boolean = false;
+
+    constructor() {
+        this.initializeData();
+        this.watchFormChanges();
+    }
+
+    ngOnInit(): void {
+        this.formRegistryService.register(
+            'Filtros de Capacidad',
+            FORM_STATE_KEY,
+            this.formData,
+            this.form$()
+        );
+    }
+
+    ngOnDestroy(): void {
+        this.formRegistryService.unregister(FORM_STATE_KEY);
+    }
+
+    protected onCareerChange(value: string): void {
+        this.form$.update(current => ({...current, careerId: value}));
+    }
+
+    protected onSchoolPeriodChange(value: string): void {
+        this.form$.update(current => ({...current, schoolPeriodId: value}));
+    }
+
+    private initializeData(): void {
+        effect(() => {
+            const data = this.store.filterForm();
+
+            if (!this.formInitialized) {
+                this.form$.set(data);
+                this.formInitialized = true;
+            }
+        });
+    }
+
+    private watchFormChanges(): void {
+        effect(() => {
+            this.store.updateFilterForm(this.form$());
+        });
+    }
+
+    private buildForm(): FieldTree<FilterFormInterface> {
+        return form<FilterFormInterface>(this.form$, (schema) => {
+            validateFilterForm(schema);
+        });
+    }
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/filter-panel/filter-panel.validation.ts ---
+
+import {required, SchemaPathTree} from '@angular/forms/signals';
+import {FilterFormInterface} from '../../enrollment-capacity.state';
+
+export function validateFilterForm(schema: SchemaPathTree<FilterFormInterface>): void {
+    required(schema.schoolPeriodId, {
+        message: 'El período escolar es requerido',
+    });
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/level-cards/level-cards.component.ts ---
+
+import {Component, inject} from '@angular/core';
+import {EnrollmentCapacityStore} from '../../enrollment-capacity.store';
+import {SubjectInterface} from '../../enrollment-capacity.state';
+
+@Component({
+    selector: 'app-level-cards',
+    template: `
+        @if (store.subjects().length > 0) {
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                <h4 class="text-sm font-bold text-slate-600 mb-5 uppercase tracking-wider">Niveles Académicos</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+                    @for (subject of store.subjects(); track subject.id) {
+                        <div
+                            class="relative flex flex-col items-center justify-center gap-3 px-5 py-6 rounded-xl border-2 cursor-pointer transition-all duration-200 min-h-[120px] select-none"
+                            [class.border-blue-500]="subject.id === selectedId()"
+                            [class.bg-blue-50]="subject.id === selectedId()"
+                            [class.shadow-md]="subject.id === selectedId()"
+                            [class.border-slate-200]="subject.id !== selectedId()"
+                            [class.bg-white]="subject.id !== selectedId()"
+                            [class.hover:border-blue-300]="subject.id !== selectedId()"
+                            [class.hover:shadow-lg]="subject.id !== selectedId()"
+                            [class.hover:-translate-y-1]="subject.id !== selectedId()"
+                            (click)="onSelect(subject)">
+                            <span class="font-extrabold text-base text-slate-800 text-center leading-tight">{{ subject.name }}</span>
+                            @if (subject.id === selectedId()) {
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
+                                    <i class="pi pi-check-circle text-sm"></i>
+                                    Seleccionado
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    `,
+})
+export class LevelCardsComponent {
+    protected readonly store = inject(EnrollmentCapacityStore);
+
+    protected selectedId(): string | null {
+        return this.store.selectedSubjectId();
+    }
+
+    protected onSelect(subject: SubjectInterface): void {
+        if (this.store.selectedSubjectId() === subject.id) {
+            this.store.selectSubject(null);
+        } else {
+            this.store.selectSubject(subject.id);
+        }
+    }
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/statistics-panel/statistics-panel.component.html ---
+
+<!-- components/statistics-panel/statistics-panel.component.html -->
+
+<div class="flex flex-col gap-4">
+  <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center">
+    <h3 class="text-sm font-bold text-slate-600 mb-4 uppercase tracking-wider">
+      Estadísticas del Nivel
+    </h3>
+
+    <p-chart
+      type="doughnut"
+      [data]="chartData()"
+      [options]="chartOptions()"
+      styleClass="w-full h-48">
+    </p-chart>
+
+    <div class="w-full flex flex-col gap-2 mt-6">
+      <div class="flex justify-between p-2 bg-slate-50 rounded-md">
+        <span>Total Cupos</span>
+        <span class="font-bold text-blue-600">
+          {{ statistics().totalCapacity }}
+        </span>
+      </div>
+
+      <div class="flex justify-between p-2 bg-orange-50 rounded-md">
+        <span>Ocupados</span>
+        <span class="font-bold text-orange-600">
+          {{ statistics().totalEnrolled }}
+        </span>
+      </div>
+
+      <div class="flex justify-between p-2 bg-green-50 rounded-md">
+        <span>Disponibles</span>
+        <span class="font-bold text-green-600">
+          {{ statistics().totalAvailable }}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/components/statistics-panel/statistics-panel.component.ts ---
+
+//Muestra totales (cupos, paralelos, etc.) según los filtros.
+import {Component, input, Input} from '@angular/core';
+import {ChartModule} from 'primeng/chart';
+import {
+    EnrollmentCapacityStatistics,
+    ChartDataInterface,
+    ChartOptionsInterface,
+} from '../../enrollment-capacity.state';
+
+@Component({
+    selector: 'app-statistics-panel',
+    imports: [ChartModule],
+    templateUrl: './statistics-panel.component.html',
+})
+export class StatisticsPanelComponent {
+    chartData=input.required<ChartDataInterface> ();
+   chartOptions=input.required<ChartOptionsInterface>();
+ statistics=input.required<EnrollmentCapacityStatistics>();
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/enrollment-capacity.service.ts ---
+
+import {inject, Injectable} from '@angular/core';
+import {HttpClient, HttpParams} from '@angular/common/http';
+import {Observable, map, catchError, of} from 'rxjs';
+import {
+    ClassroomInterface,
+    TeacherDistributionInterface,
+    FilterFormInterface,
+    CreateTeacherDistributionPayload,
+    UpdateTeacherDistributionPayload,
+    SubjectInterface,
+} from './enrollment-capacity.state';
+import {CatalogueInterface} from '@utils/interfaces';
+import {HttpResponseInterface} from '@utils/interfaces';
+import {environment} from '@env/environment';
+
+@Injectable({providedIn: 'root'})
+export class EnrollmentCapacityHttpService {
+    private readonly httpClient = inject(HttpClient);
+    private readonly apiUrl = environment.API_URL;
+//private readonly apiUrl = environment.ACADEMIC_COORDINATOR_API;
+    findCareers(): Observable<CatalogueInterface[]> {
+        return this.httpClient.get<HttpResponseInterface>(`${this.apiUrl}/careers`).pipe(
+            map((response) => {
+                const data = Array.isArray(response.data) ? response.data : [];
+                return data.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    code: item.code || item.acronym,
+                }));
+            }),
+            catchError(() => of([]))
+        );
+    }
+
+    findSchoolPeriods(): Observable<CatalogueInterface[]> {
+        return this.httpClient.get<HttpResponseInterface>(`${this.apiUrl}/school-periods`).pipe(
+            map((response) => {
+                const data = Array.isArray(response.data) ? response.data : [];
+                return data.map((item: any) => ({
+                    id: item.id,
+                    name: item.name,
+                    code: item.code,
+                }));
+            }),
+            catchError(() => of([]))
+        );
+    }
+
+    findSubjectsByCareer(careerId: string): Observable<SubjectInterface[]> {
+        return this.httpClient.get<HttpResponseInterface>(`${this.apiUrl}/careers/${careerId}/subjects`).pipe(
+            map((response) => {
+                const data = Array.isArray(response.data) ? response.data : [];
+                return data.map((item: any): SubjectInterface => ({
+                    id: item.id,
+                    name: item.name,
+                    code: item.code,
+                    academicPeriod: item.academicPeriod,
+                    curriculum: item.curriculum,
+                }));
+            }),
+            catchError(() => of([]))
+        );
+    }
+
+    findAllDistributions(filters: Partial<FilterFormInterface>): Observable<TeacherDistributionInterface[]> {
+        if (!filters.schoolPeriodId) {
+            return of([]);
+        }
+
+        let params = new HttpParams();
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value != null && value !== '') {
+                params = params.append(key, String(value));
+            }
+        });
+
+        return this.httpClient.get<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions`, {params}).pipe(
+            map((response) => {
+                return Array.isArray(response.data) ? response.data : [];
+            }),
+            catchError(() => of([]))
+        );
+    }
+
+    findClassrooms(): Observable<ClassroomInterface[]> {
+        return this.httpClient.get<HttpResponseInterface>(`${this.apiUrl}/classrooms`).pipe(
+            map((response) => {
+                return Array.isArray(response.data) ? response.data : [];
+            }),
+            catchError(() => of([]))
+        );
+    }
+
+    register(payload: CreateTeacherDistributionPayload): Observable<TeacherDistributionInterface> {
+        return this.httpClient.post<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions`, payload).pipe(
+            map((response) => {
+                return Array.isArray(response.data) ? response.data[0] : response.data;
+            })
+        );
+    }
+
+    update(id: string, payload: UpdateTeacherDistributionPayload): Observable<TeacherDistributionInterface> {
+        return this.httpClient.patch<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions/${id}`, payload).pipe(
+            map((response) => {
+                return Array.isArray(response.data) ? response.data[0] : response.data;
+            })
+        );
+    }
+
+    findEnrolledCounts(distributionIds: string[]): Observable<Record<string, number>> {
+        if (!distributionIds.length) {
+            return of({});
+        }
+        const params = new HttpParams().set('ids', distributionIds.join(','));
+        return this.httpClient.get<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions/enrolled-counts`, {params}).pipe(
+            map((response) => {
+                return response.data || {};
+            }),
+            catchError(() => of({}))
+        );
+    }
+
+    remove(id: string): Observable<void> {
+        return this.httpClient.delete<HttpResponseInterface>(`${this.apiUrl}/teacher-distributions/${id}`).pipe(
+            map(() => undefined)
+        );
+    }
+}
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/enrollment-capacity.state.ts ---
+
+import {CatalogueInterface} from '@utils/interfaces';
+
+export type {CatalogueInterface};
+
+export interface SubjectInterface {
+    id: string;
+    name: string;
+    code?: string;
+    academicPeriod?: {
+        id: string;
+        name: string;
+        description?: string;
+    };
+    curriculum?: {
+        id: string;
+        name: string;
+        career?: {
+            id: string;
+            name: string;
+        };
+    };
+}
+
+export interface ClassroomInterface {
+    id: string;
+    name: string;
+    capacity: number;
+    code?: string;
+    location?: string;
+}
+
+export interface TeacherDistributionInterface {
+    id: string;
+    parallelId: string;
+    schoolPeriodId: string;
+    subjectId: string;
+    teacherId: string | null;
+    workdayId: string;
+    classroomId: string | null;
+    capacity: number;
+    hours: number | null;
+    createdAt?: string;
+    updatedAt?: string;
+    deletedAt?: string | null;
+
+    parallel?: {
+        id: string;
+        name: string;
+        code?: string;
+    };
+    schoolPeriod?: {
+        id: string;
+        name: string;
+        code?: string;
+        shortName?: string;
+    };
+    subject?: {
+        id: string;
+        name: string;
+        code?: string;
+        academicPeriod?: {
+            id: string;
+            name: string;
+            description?: string;
+        };
+        curriculum?: {
+            id: string;
+            name: string;
+            career?: {
+                id: string;
+                name: string;
+            };
+        };
+    };
+    workday?: {
+        id: string;
+        name: string;
+        code?: string;
+    };
+    classroom?: {
+        id: string;
+        name: string;
+        capacity: number;
+        code?: string;
+        location?: string;
+    };
+    teacher?: {
+        id: string;
+        name: string;
+    } | null;
+}
+
+export interface CellInterface {
+    id: string;
+    horario: string;
+    paralelo: string;
+    materia: string;
+    subjectId: string;
+    parallelId: string;
+    workdayId: string;
+    schoolPeriodId: string;
+    classroomId: string | null;
+    aula: string;
+    nivelAcademico: string;
+    cupoMaximo: number;
+    estudiantesContados: number;
+    colorSemaforo: 'verde' | 'naranja' | 'rojo';
+    teacherDistributionId: string;
+}
+
+export interface BlockInterface {
+    horarioNombre: string;
+    celdas: CellInterface[];
+}
+
+export interface RowInterface {
+    jornadaId: string;
+    jornadaNombre: string;
+    bloquesHorarios: BlockInterface[];
+}
+
+export interface EnrollmentCapacityStatistics {
+    totalCapacity: number;
+    totalEnrolled: number;
+    totalAvailable: number;
+    globalOccupancyPercentage: number;
+    byShift: ShiftStatistics[];
+    byCourse: CourseStatistics[];
+}
+
+export interface ShiftStatistics {
+    shiftName: string;
+    capacity: number;
+    enrolled: number;
+    available: number;
+    percentage: number;
+}
+
+export interface CourseStatistics {
+    courseName: string;
+    capacity: number;
+    enrolled: number;
+    available: number;
+    percentage: number;
+}
+
+export interface FilterFormInterface {
+    careerId: string;
+    schoolPeriodId: string;
+}
+
+export interface ModalFormInterface {
+    capacity: number;
+    parallelId: string | null;
+    workdayId: string | null;
+    subjectId: string | null;
+    classroomId: string | null;
+    teacherId?: string;
+    hours?: number;
+}
+
+export interface CreateTeacherDistributionPayload {
+    capacity: number;
+    parallelId: string;
+    workdayId: string;
+    subjectId: string;
+    schoolPeriodId: string;
+    classroomId?: string | null;
+    hours?: number;
+}
+
+export interface UpdateTeacherDistributionPayload {
+    capacity: number;
+    parallelId: string;
+    workdayId: string;
+    subjectId: string;
+    schoolPeriodId: string;
+    classroomId?: string | null;
+}
+
+export interface ChartDataInterface {
+    labels: string[];
+    datasets: {
+        data: number[];
+        backgroundColor: string[];
+        hoverBackgroundColor: string[];
+    }[];
+}
+
+export interface ChartOptionsInterface {
+    cutout?: string;
+    plugins?: {
+        legend?: {
+            position?: string;
+            labels?: {
+                color?: string;
+            };
+        };
+    };
+}
+
+export const INITIAL_FILTER_FORM: FilterFormInterface = {
+    careerId: '',
+    schoolPeriodId: '',
+};
+
+export const INITIAL_MODAL_FORM: ModalFormInterface = {
+    capacity: 30,
+    parallelId: null,
+    workdayId: null,
+    subjectId: null,
+    classroomId: null,
+    hours: 4,
+};
+
+export const DEFAULT_CHART_OPTIONS: ChartOptionsInterface = {
+    cutout: '60%',
+    plugins: {
+        legend: {
+            position: 'bottom',
+            labels: {
+                color: '#475569',
+            },
+        },
+    },
+};
+
+--- ARCHIVO: src/app/pages/admin/work-flows/enrollment-capacity/enrollment-capacity.store.ts ---
+
+import {computed, inject, Injectable, signal} from '@angular/core';
+import {EnrollmentCapacityHttpService} from './enrollment-capacity.service';
+import {ConfirmationService} from 'primeng/api';
+import {CustomMessageService} from '@utils/services';
+import {
+    TeacherDistributionInterface,
+    CatalogueInterface,
+    ClassroomInterface,
+    FilterFormInterface,
+    ModalFormInterface,
+    RowInterface,
+    BlockInterface,
+    CellInterface,
+    EnrollmentCapacityStatistics,
+    ShiftStatistics,
+    CourseStatistics,
+    ChartDataInterface,
+    ChartOptionsInterface,
+    CreateTeacherDistributionPayload,
+    UpdateTeacherDistributionPayload,
+    DEFAULT_CHART_OPTIONS,
+    INITIAL_FILTER_FORM,
+    INITIAL_MODAL_FORM,
+    SubjectInterface,
+} from './enrollment-capacity.state';
+import { environment } from '@env/environment';
+
+@Injectable({providedIn: 'root'})
+export class EnrollmentCapacityStore {
+    private readonly httpService = inject(EnrollmentCapacityHttpService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly customMessageService = inject(CustomMessageService);
+
+    readonly filterForm = signal<FilterFormInterface>({...INITIAL_FILTER_FORM});
+    readonly modalForm = signal<ModalFormInterface>({...INITIAL_MODAL_FORM});
+
+    readonly careers = signal<CatalogueInterface[]>([]);
+    readonly schoolPeriods = signal<CatalogueInterface[]>([]);
+    readonly classrooms = signal<ClassroomInterface[]>([]);
+    readonly distributions = signal<TeacherDistributionInterface[]>([]);
+    readonly subjects = signal<SubjectInterface[]>([]);
+
+    readonly modalVisible = signal<boolean>(false);
+    readonly isEditMode = signal<boolean>(false);
+    readonly selectedCell = signal<CellInterface | null>(null);
+    readonly chartOptions = signal<ChartOptionsInterface>(DEFAULT_CHART_OPTIONS);
+    readonly isLoading = signal<boolean>(false);
+    readonly error = signal<string | null>(null);
+    readonly enrolledCounts = signal<Map<string, number>>(new Map());
+    readonly selectedSubjectId = signal<string | null>(null);
+
+    readonly filteredDistributions = computed<TeacherDistributionInterface[]>(() => {
+        const selected = this.selectedSubjectId();
+        if (!selected) return this.distributions();
+        return this.distributions().filter((d) => d.subjectId === selected);
+    });
+
+    readonly parallels = computed<CatalogueInterface[]>(() => {
+        const parallelsMap = new Map<string, CatalogueInterface>();
+        this.filteredDistributions().forEach((dist) => {
+            if (dist.parallel && !parallelsMap.has(dist.parallel.id)) {
+                parallelsMap.set(dist.parallel.id, {
+                    id: dist.parallel.id,
+                    name: dist.parallel.name,
+                    code: dist.parallel.code,
+                });
+            }
+        });
+        return Array.from(parallelsMap.values());
+    });
+
+    readonly workdays = computed<CatalogueInterface[]>(() => {
+        const workdaysMap = new Map<string, CatalogueInterface>();
+        this.filteredDistributions().forEach((dist) => {
+            if (dist.workday && !workdaysMap.has(dist.workday.id)) {
+                workdaysMap.set(dist.workday.id, {
+                    id: dist.workday.id,
+                    name: dist.workday.name,
+                    code: dist.workday.code,
+                });
+            }
+        });
+        return Array.from(workdaysMap.values());
+    });
+
+    readonly matrix = computed<RowInterface[]>(() => {
+        this.enrolledCounts();
+        return this.buildEnrollmentMatrix(this.filteredDistributions());
+    });
+
+    readonly statistics = computed<EnrollmentCapacityStatistics>(() => {
+        this.enrolledCounts();
+        return this.calculateEnrollmentStatistics(this.filteredDistributions());
+    });
+
+    readonly hasLevelSelected = computed<boolean>(() => !!this.selectedSubjectId());
+
+    readonly chartData = computed<ChartDataInterface>(() => {
+        return this.buildEnrollmentChart(this.statistics());
+    });
+
+    readonly hasBothFilters = computed<boolean>(() => {
+        return !!this.filterForm().careerId && !!this.filterForm().schoolPeriodId;
+    });
+
+    readonly showDetails = computed<boolean>(() => {
+        return this.hasBothFilters() && !!this.selectedSubjectId();
+    });
+
+    readonly hasSelectedLevelDistributions = computed<boolean>(() => {
+        const subjectId = this.selectedSubjectId();
+        if (!subjectId) return false;
+        return this.distributions().some((d) => d.subjectId === subjectId);
+    });
+
+    updateFilterForm(update: Partial<FilterFormInterface>): void {
+        this.filterForm.update((current) => ({...current, ...update}));
+    }
+
+    updateModalForm(update: Partial<ModalFormInterface>): void {
+        this.modalForm.update((current) => ({...current, ...update}));
+    }
+
+    loadInitialData(): void {
+        this.isLoading.set(true);
+        this.error.set(null);
+
+        this.httpService.findCareers().subscribe({
+            next: (data: CatalogueInterface[]) => this.careers.set(data),
+            error: () => this.error.set('Error al cargar carreras'),
+        });
+
+        this.httpService.findSchoolPeriods().subscribe({
+            next: (data: CatalogueInterface[]) => {
+                this.schoolPeriods.set(data);
+                this.isLoading.set(false);
+            },
+            error: () => {
+                this.error.set('Error al cargar períodos escolares');
+                this.isLoading.set(false);
+            },
+        });
+
+        this.httpService.findClassrooms().subscribe({
+            next: (data: ClassroomInterface[]) => this.classrooms.set(data),
+            error: () => this.error.set('Error al cargar aulas'),
+        });
+    }
+
+    loadSubjectsByCareer(careerId: string): void {
+        if (!careerId) {
+            this.subjects.set([]);
+            return;
+        }
+
+  
+        this.httpService.findSubjectsByCareer(careerId).subscribe({
+            next: (data: SubjectInterface[]) => this.subjects.set(data),
+            error: () => this.error.set('Error al cargar materias'),
+        });
+    }
+
+    loadDistributions(form: Partial<FilterFormInterface>): void {
+        if (!form.schoolPeriodId) {
+            this.distributions.set([]);
+            this.enrolledCounts.set(new Map());
+            return;
+        }
+
+        this.isLoading.set(true);
+
+        this.httpService.findAllDistributions(form).subscribe({
+            next: (data: TeacherDistributionInterface[]) => {
+                this.distributions.set(data);
+                this.loadEnrolledCounts(data);
+                this.isLoading.set(false);
+            },
+            error: () => {
+                this.error.set('Error al cargar distribuciones');
+                this.isLoading.set(false);
+            },
+        });
+    }
+
+    selectSubject(subjectId: string | null): void {
+        this.selectedSubjectId.set(subjectId);
+    }
+
+    openCreateModal(subjectId?: string): void {
+        this.isEditMode.set(false);
+        this.selectedCell.set(null);
+        this.modalForm.set({
+            ...INITIAL_MODAL_FORM,
+            subjectId: subjectId || null,
+        });
+        this.modalVisible.set(true);
+    }
+
+    openEditModal(cell: CellInterface): void {
+        this.isEditMode.set(true);
+        this.selectedCell.set(cell);
+        this.modalForm.set({
+            capacity: cell.cupoMaximo,
+            parallelId: cell.parallelId,
+            workdayId: cell.workdayId,
+            subjectId: cell.subjectId,
+            classroomId: cell.classroomId,
+        });
+        this.modalVisible.set(true);
+    }
+
+    closeModal(): void {
+        this.modalVisible.set(false);
+        this.selectedCell.set(null);
+        this.modalForm.set({...INITIAL_MODAL_FORM});
+    }
+
+    confirmSave(): void {
+        this.confirmationService.confirm({
+            header: this.isEditMode() ? 'Actualizar distribución' : 'Guardar distribución',
+            message: this.isEditMode()
+                ? '¿Está seguro de actualizar este cupo?'
+                : '¿Está seguro de guardar este nuevo cupo?',
+            icon: 'pi pi-question-circle',
+            acceptLabel: this.isEditMode() ? 'Actualizar' : 'Guardar',
+            rejectLabel: 'Cancelar',
+            acceptIcon: 'pi pi-check',
+            rejectIcon: 'pi pi-times',
+            acceptButtonStyleClass: 'p-button-success',
+            rejectButtonStyleClass: 'p-button-secondary',
+            accept: () => this.saveDistribution(),
+        });
+    }
+
+    confirmDelete(): void {
+        const cell = this.selectedCell();
+
+        if (cell && cell.estudiantesContados > 0) {
+            this.customMessageService.showError({
+                summary: 'No se puede eliminar',
+                detail: `El cupo tiene ${cell.estudiantesContados} estudiante(s) matriculado(s). No se puede eliminar un cupo con estudiantes asignados.`,
+            });
+            return;
+        }
+
+        this.confirmationService.confirm({
+            header: 'Eliminar distribución',
+            message: '¿Está seguro de eliminar este cupo?',
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Eliminar',
+            rejectLabel: 'Cancelar',
+            acceptIcon: 'pi pi-trash',
+            rejectIcon: 'pi pi-times',
+            acceptButtonStyleClass: 'p-button-danger',
+            rejectButtonStyleClass: 'p-button-secondary',
+            accept: () => this.deleteDistribution(),
+        });
+    }
+
+    private loadEnrolledCounts(distributions: TeacherDistributionInterface[]): void {
+        if (!distributions.length) {
+            this.enrolledCounts.set(new Map());
+            return;
+        }
+
+        const ids = distributions.map((dist) => dist.id);
+
+        this.httpService.findEnrolledCounts(ids).subscribe({
+            next: (result) => {
+                const counts = new Map<string, number>();
+                distributions.forEach((dist) => {
+                    counts.set(dist.id, result[dist.id] || 0);
+                });
+                this.enrolledCounts.set(counts);
+            },
+            error: () => {
+                const emptyCounts = new Map<string, number>();
+                distributions.forEach((dist) => emptyCounts.set(dist.id, 0));
+                this.enrolledCounts.set(emptyCounts);
+            },
+        });
+    }
+
+    private saveDistribution(): void {
+        const isEditing = this.isEditMode();
+        const filterData = this.filterForm();
+        const modalData = this.modalForm();
+
+        if (isEditing && this.selectedCell()) {
+            const selectedCell = this.selectedCell()!;
+            const payload: UpdateTeacherDistributionPayload = {
+                capacity: modalData.capacity,
+                parallelId: selectedCell.parallelId,
+                workdayId: selectedCell.workdayId,
+                subjectId: selectedCell.subjectId,
+                schoolPeriodId: selectedCell.schoolPeriodId,
+                classroomId: modalData.classroomId || selectedCell.classroomId,
+            };
+
+            this.httpService.update(selectedCell.id, payload).subscribe({
+                next: (updated) => {
+                    this.distributions.update((list) =>
+                        list.map((d) => (d.id === updated.id ? updated : d))
+                    );
+                    this.closeModal();
+                },
+                error: (err: any) => {
+                    this.customMessageService.showError({
+                        summary: 'Error',
+                        detail: err.error?.message || 'No se pudo actualizar la distribución',
+                    });
+                },
+            });
+        } else {
+            if (!modalData.subjectId || !modalData.workdayId || !modalData.classroomId) {
+                this.customMessageService.showError({
+                    summary: 'Error',
+                    detail: 'Todos los campos son obligatorios',
+                });
+                return;
+            }
+
+            const parallelId = modalData.parallelId ?? (this.parallels()[0]?.id ?? '');
+
+            const payload: CreateTeacherDistributionPayload = {
+                capacity: modalData.capacity,
+                parallelId,
+                workdayId: modalData.workdayId,
+                subjectId: modalData.subjectId,
+                schoolPeriodId: filterData.schoolPeriodId,
+                classroomId: modalData.classroomId,
+                hours: modalData.hours || 4,
+            };
+
+            this.httpService.register(payload).subscribe({
+                next: (created) => {
+                    this.distributions.update((list) => [...list, created]);
+                    this.enrolledCounts.update((map) => {
+                        const next = new Map(map);
+                        next.set(created.id, 0);
+                        return next;
+                    });
+                    this.closeModal();
+                },
+                error: (err: any) => {
+                    this.customMessageService.showError({
+                        summary: 'Error',
+                        detail: err.error?.message || 'No se pudo crear la distribución',
+                    });
+                },
+            });
+        }
+    }
+
+    private deleteDistribution(): void {
+        const cell = this.selectedCell();
+        if (!cell) return;
+
+        this.httpService.remove(cell.id).subscribe({
+            next: () => {
+                this.distributions.update((list) =>
+                    list.filter((d) => d.id !== cell.id)
+                );
+                this.enrolledCounts.update((map) => {
+                    const next = new Map(map);
+                    next.delete(cell.id);
+                    return next;
+                });
+                this.closeModal();
+            },
+            error: (err: any) => {
+                this.customMessageService.showError({
+                    summary: 'Error',
+                    detail: err.error?.message || 'No se pudo eliminar la distribución',
+                });
+            },
+        });
+    }
+
+    private buildEnrollmentMatrix(distributions: TeacherDistributionInterface[]): RowInterface[] {
+        if (!distributions.length) return [];
+
+        const counts = this.enrolledCounts();
+        const workdayMap = new Map<string, BlockInterface>();
+
+        distributions.forEach((dist) => {
+            const workdayName = dist.workday?.name || 'Sin Jornada';
+            const parallelName = dist.parallel?.name || 'Sin Paralelo';
+            const subjectName = dist.subject?.name || 'Sin Materia';
+            const academicPeriodName = dist.subject?.academicPeriod?.name || 'Sin Nivel';
+            const capacity = dist.capacity || 0;
+            const enrolled = counts.get(dist.id) || 0;
+
+            const classroomName = dist.classroom?.name || '';
+            const cell: CellInterface = {
+                id: dist.id,
+                horario: workdayName,
+                paralelo: parallelName,
+                materia: subjectName,
+                subjectId: dist.subjectId,
+                parallelId: dist.parallelId,
+                workdayId: dist.workdayId,
+                schoolPeriodId: dist.schoolPeriodId,
+                classroomId: dist.classroomId,
+                aula: classroomName,
+                nivelAcademico: academicPeriodName,
+                cupoMaximo: capacity,
+                estudiantesContados: enrolled,
+                colorSemaforo: this.calculateColorSemaforo(capacity, enrolled),
+                teacherDistributionId: dist.id,
+            };
+
+            const workdayId = dist.workdayId || 'unknown';
+
+            if (!workdayMap.has(workdayId)) {
+                workdayMap.set(workdayId, {
+                    horarioNombre: workdayName,
+                    celdas: [],
+                });
+            }
+
+            workdayMap.get(workdayId)!.celdas.push(cell);
+        });
+
+        return Array.from(workdayMap.entries()).map(([workdayId, block]) => ({
+            jornadaId: workdayId,
+            jornadaNombre: block.horarioNombre,
+            bloquesHorarios: [block],
+        }));
+    }
+
+    private calculateColorSemaforo(capacity: number, enrolled: number): 'verde' | 'naranja' | 'rojo' {
+        if (capacity === 0) return 'rojo';
+        const percentage = (enrolled / capacity) * 100;
+        if (percentage >= 90) return 'rojo';
+        if (percentage >= 70) return 'naranja';
+        return 'verde';
+    }
+
+    private calculateEnrollmentStatistics(distributions: TeacherDistributionInterface[]): EnrollmentCapacityStatistics {
+        const counts = this.enrolledCounts();
+        const totalCapacity = distributions.reduce((sum, d) => sum + (d.capacity || 0), 0);
+        const totalEnrolled = distributions.reduce((sum, d) => sum + (counts.get(d.id) || 0), 0);
+        const totalAvailable = totalCapacity - totalEnrolled;
+        const globalOccupancyPercentage = totalCapacity > 0 ? (totalEnrolled / totalCapacity) * 100 : 0;
+
+        return {
+            totalCapacity,
+            totalEnrolled,
+            totalAvailable,
+            globalOccupancyPercentage,
+            byShift: this.calculateByShift(distributions),
+            byCourse: this.calculateByCourse(distributions),
+        };
+    }
+
+    private calculateByShift(distributions: TeacherDistributionInterface[]): ShiftStatistics[] {
+        const counts = this.enrolledCounts();
+        const shiftMap = new Map<string, {capacity: number; enrolled: number}>();
+
+        distributions.forEach((dist) => {
+            const shiftName = dist.workday?.name || 'Sin Jornada';
+            const current = shiftMap.get(shiftName) || {capacity: 0, enrolled: 0};
+            current.capacity += dist.capacity || 0;
+            current.enrolled += counts.get(dist.id) || 0;
+            shiftMap.set(shiftName, current);
+        });
+
+        return Array.from(shiftMap.entries()).map(([shiftName, data]) => ({
+            shiftName,
+            capacity: data.capacity,
+            enrolled: data.enrolled,
+            available: data.capacity - data.enrolled,
+            percentage: data.capacity > 0 ? (data.enrolled / data.capacity) * 100 : 0,
+        }));
+    }
+
+    private calculateByCourse(distributions: TeacherDistributionInterface[]): CourseStatistics[] {
+        const counts = this.enrolledCounts();
+        const courseMap = new Map<string, {capacity: number; enrolled: number}>();
+
+        distributions.forEach((dist) => {
+            const courseName = dist.subject?.name || 'Sin Materia';
+            const current = courseMap.get(courseName) || {capacity: 0, enrolled: 0};
+            current.capacity += dist.capacity || 0;
+            current.enrolled += counts.get(dist.id) || 0;
+            courseMap.set(courseName, current);
+        });
+
+        return Array.from(courseMap.entries()).map(([courseName, data]) => ({
+            courseName,
+            capacity: data.capacity,
+            enrolled: data.enrolled,
+            available: data.capacity - data.enrolled,
+            percentage: data.capacity > 0 ? (data.enrolled / data.capacity) * 100 : 0,
+        }));
+    }
+
+    private buildEnrollmentChart(statistics: EnrollmentCapacityStatistics): ChartDataInterface {
+        return {
+            labels: ['Ocupados', 'Disponibles'],
+            datasets: [
+                {
+                    data: [statistics.totalEnrolled, statistics.totalAvailable],
+                    backgroundColor: ['#f97316', '#22c55e'],
+                    hoverBackgroundColor: ['#ea580c', '#16a34a'],
+                },
+            ],
+        };
+    }
+}

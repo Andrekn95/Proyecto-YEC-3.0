@@ -19,8 +19,7 @@
                 optionLabel="name"
                 optionValue="id"
                 placeholder="Seleccione la carrera"
-                [ngModel]="form$().careerId"
-                (ngModelChange)="onCareerChange($event)"
+                [(ngModel)]="formData.careerId().value"
                 appendTo="body"
                 styleClass="w-full">
             </p-select>
@@ -43,8 +42,7 @@
                 optionLabel="name"
                 optionValue="id"
                 placeholder="Seleccione"
-                [ngModel]="form$().schoolPeriodId"
-                (ngModelChange)="onSchoolPeriodChange($event)"
+                [(ngModel)]="formData.schoolPeriodId().value"
                 appendTo="body"
                 styleClass="w-full">
             </p-select>
